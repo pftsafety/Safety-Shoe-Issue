@@ -1,0 +1,2575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SafetyShoe Portal — PPE Distribution</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#F0F2F7;--surface:#FFFFFF;--surface2:#F7F8FC;--surface3:#EEF0F8;
+  --border:#E2E5EF;--border2:#C8CCE0;
+  --text:#111827;--text2:#374151;--muted:#6B7280;--muted2:#9CA3AF;
+  --primary:#1D4ED8;--primary-l:#3B6EF0;--primary-bg:#EEF3FE;
+  --green:#059669;--green-l:#34D399;--green-bg:#ECFDF5;
+  --amber:#D97706;--amber-l:#FBBF24;--amber-bg:#FFFBEB;
+  --red:#DC2626;--red-l:#F87171;--red-bg:#FEF2F2;
+  --teal:#0891B2;--teal-bg:#ECFEFF;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.06),0 2px 6px rgba(0,0,0,.04);
+  --radius:12px;--radius-sm:8px;--radius-xs:6px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px;line-height:1.5}
+
+/* LOADER */
+#loader{position:fixed;inset:0;background:rgba(240,242,247,.88);backdrop-filter:blur(4px);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;opacity:0;pointer-events:none;transition:opacity .2s}
+#loader.show{opacity:1;pointer-events:all}
+.spin-ring{width:40px;height:40px;border:3px solid #C8D5F8;border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loaderText{margin-top:12px;font-size:13px;color:var(--muted);font-weight:600}
+
+/* ── INIT LOADING SCREEN ──────────────────────────────────── */
+#initLoader{position:fixed;inset:0;background:linear-gradient(135deg,#EFF6FF 0%,#F0FDF4 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10000;transition:opacity .55s ease,transform .55s ease}
+#initLoader.hide{opacity:0;transform:scale(1.04);pointer-events:none}
+.init-logo{font-size:56px;margin-bottom:14px;animation:floatBounce 2s ease-in-out infinite}
+@keyframes floatBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.init-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:21px;font-weight:800;color:#1D4ED8;letter-spacing:-.02em;margin-bottom:4px;text-align:center;padding:0 24px}
+.init-sub{font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;color:#64748b;margin-bottom:34px;text-align:center}
+.init-bar-wrap{width:220px;height:4px;background:#DBEAFE;border-radius:2px;overflow:hidden;margin-bottom:12px}
+.init-bar{height:100%;width:0%;background:linear-gradient(90deg,#1D4ED8,#059669);border-radius:2px;animation:initProgress 2.5s cubic-bezier(.4,0,.2,1) forwards}
+@keyframes initProgress{0%{width:0%}40%{width:52%}75%{width:80%}92%{width:91%}100%{width:100%}}
+.init-status{font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;color:#94a3b8;letter-spacing:.04em}
+
+/* SKELETON */
+.skel{background:linear-gradient(90deg,#E8EAF4 25%,#F1F3FA 50%,#E8EAF4 75%);background-size:300% 100%;animation:shimmer 1.3s ease infinite;border-radius:var(--radius-sm)}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skel-row{height:78px;margin-bottom:8px;border-radius:var(--radius-sm)}
+
+/* TOPBAR */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:62px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm)}
+.topbar-brand{display:flex;align-items:center;gap:12px}
+.brand-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--primary),var(--primary-l));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 2px 8px rgba(29,78,216,.25)}
+.brand-name{font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.01em}
+.brand-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:20px}
+.topbar-status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:500}
+.status-dot{width:7px;height:7px;background:var(--green);border-radius:50%;animation:pulse 2.5s ease infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.topbar-date{font-size:12px;color:var(--muted);font-weight:500}
+
+/* SHELL */
+.shell{max-width:980px;margin:0 auto;padding:28px 20px 0}
+.page-title{margin-bottom:20px}
+.page-title h2{font-size:20px;font-weight:700;color:var(--text);letter-spacing:-.02em}
+.page-title p{font-size:13px;color:var(--muted);margin-top:3px}
+
+/* NAV TABS — scrollable on mobile */
+.nav-tabs-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:24px}
+.nav-tabs{display:flex;gap:2px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:5px;box-shadow:var(--shadow-sm);min-width:max-content}
+.nav-tab{flex-shrink:0;padding:9px 14px;border:none;background:transparent;font-family:'Plus Jakarta Sans',sans-serif;font-size:12.5px;font-weight:600;color:var(--muted);border-radius:9px;cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:7px;white-space:nowrap}
+.nav-tab:hover:not(.active){background:var(--surface3);color:var(--text2)}
+.nav-tab.active{background:var(--primary);color:#fff;box-shadow:0 2px 10px rgba(29,78,216,.3)}
+.nav-tab .tab-label{font-size:12.5px}
+
+/* PANELS */
+.panel{display:none}.panel.active{display:block}
+
+/* SECTION */
+.section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px;box-shadow:var(--shadow-sm)}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap}
+.section-title{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;color:var(--text)}
+.section-icon{width:32px;height:32px;border-radius:var(--radius-xs);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.icon-blue{background:var(--primary-bg)}.icon-green{background:var(--green-bg)}.icon-amber{background:var(--amber-bg)}.icon-red{background:var(--red-bg)}.icon-teal{background:var(--teal-bg)}.icon-purple{background:#F3E8FF}
+
+/* STAT CARDS */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px 18px;box-shadow:var(--shadow-sm);transition:box-shadow .2s,transform .2s;position:relative}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.stat-card.sc-total::before{background:var(--primary)}.stat-card.sc-wait::before{background:var(--amber)}.stat-card.sc-ready::before{background:var(--green)}.stat-card.sc-sizes::before{background:var(--red)}
+.stat-card:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.stat-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.stat-value{font-size:28px;font-weight:800;margin:8px 0 3px;line-height:1;letter-spacing:-.02em}
+.sc-total .stat-value{color:var(--primary)}.sc-wait .stat-value{color:var(--amber)}.sc-ready .stat-value{color:var(--green)}.sc-sizes .stat-value{color:var(--red)}
+.stat-sub{font-size:11px;color:var(--muted2)}
+
+/* FORMS */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-label{font-size:11.5px;font-weight:700;color:var(--text2);letter-spacing:.02em}
+.form-input,.form-select{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 13px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13.5px;color:var(--text);outline:none;width:100%;transition:border-color .15s,background .15s,box-shadow .15s;appearance:none}
+.form-input:focus,.form-select:focus{border-color:var(--primary);background:#fff;box-shadow:0 0 0 3px rgba(29,78,216,.1)}
+.form-input::placeholder{color:var(--muted2)}
+.form-select.sel-replace{border-color:var(--amber);background:var(--amber-bg)}
+
+/* ALERTS */
+.alert{display:none;align-items:flex-start;gap:10px;border-radius:var(--radius-sm);padding:12px 14px;font-size:12.5px;font-weight:500;margin-top:12px}
+.alert.show{display:flex}
+.alert-amber{background:var(--amber-bg);border:1px solid #FDE68A;color:#92400E}
+.alert-red{background:var(--red-bg);border:1px solid #FECACA;color:#991B1B}
+.alert-blue{background:var(--primary-bg);border:1px solid #BFDBFE;color:#1E40AF}
+.alert svg{flex-shrink:0;margin-top:1px}
+.alert label{font-size:12px;color:#92400E;cursor:pointer;display:flex;align-items:center;gap:6px;margin-top:8px;font-weight:600;text-transform:none;letter-spacing:0}
+.alert input[type=checkbox]{width:auto;accent-color:var(--amber)}
+.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 18px;border:none;border-radius:var(--radius-sm);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-primary{background:var(--primary);color:#fff;box-shadow:0 1px 3px rgba(29,78,216,.3)}
+.btn-primary:hover:not(:disabled){background:var(--primary-l);box-shadow:0 4px 12px rgba(29,78,216,.35)}
+.btn-green{background:var(--green-bg);color:var(--green);border:1.5px solid #A7F3D0}
+.btn-green:hover:not(:disabled){background:#D1FAE5;border-color:var(--green-l)}
+.btn-amber{background:var(--amber-bg);color:var(--amber);border:1.5px solid #FDE68A}
+.btn-amber:hover:not(:disabled){background:#FEF3C7}
+.btn-red{background:var(--red-bg);color:var(--red);border:1.5px solid #FECACA}
+.btn-red:hover:not(:disabled){background:#FEE2E2}
+.btn-teal{background:var(--teal-bg);color:var(--teal);border:1.5px solid #A5F3FC}
+.btn-teal:hover:not(:disabled){background:#CFFAFE}
+.btn-full{width:100%;justify-content:center;padding:12px}
+.btn-sm{padding:6px 12px;font-size:12px}
+
+/* STATUS MESSAGES */
+.msg{display:none;margin-top:12px;padding:11px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:600}
+.msg.ok{background:var(--green-bg);color:#065F46;border:1px solid #A7F3D0;display:block}
+.msg.err{background:var(--red-bg);color:#991B1B;border:1px solid #FECACA;display:block}
+.msg.inf{background:var(--primary-bg);color:#1E40AF;border:1px solid #BFDBFE;display:block}
+
+/* INFO STRIP */
+.info-strip{display:flex;gap:10px;align-items:flex-start;background:var(--primary-bg);border:1px solid #BFDBFE;border-radius:var(--radius-sm);padding:11px 14px;font-size:12px;color:#1E40AF;margin-bottom:20px;font-weight:500}
+
+/* TOOLBAR */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.search-wrap{flex:1;min-width:200px;max-width:380px;position:relative;display:flex;align-items:center}
+.search-wrap svg{position:absolute;left:11px;color:var(--muted2);pointer-events:none}
+.search-input{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 13px 9px 34px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;color:var(--text);outline:none;width:100%;transition:border-color .15s,box-shadow .15s}
+.search-input:focus{border-color:var(--primary);background:#fff;box-shadow:0 0 0 3px rgba(29,78,216,.08)}
+.search-input::placeholder{color:var(--muted2)}
+.action-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+
+/* PENDING ROWS — swipe-to-delete wrapper */
+.pending-wrap{position:relative;margin-bottom:8px;border-radius:var(--radius-sm);overflow:hidden}
+.pending-delete-bg{
+  position:absolute;inset:0;right:0;
+  background:linear-gradient(135deg,#dc2626,#b91c1c);
+  display:flex;align-items:center;justify-content:flex-end;
+  padding-right:22px;border-radius:var(--radius-sm);
+  opacity:0;transition:opacity .15s;pointer-events:none;
+}
+.pending-delete-bg .del-icon{color:#fff;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:700}
+.pending-delete-bg .del-icon svg{opacity:.9}
+.pending-item{
+  display:flex;align-items:flex-start;gap:14px;padding:14px 16px;
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--surface);
+  transition:border-color .2s,box-shadow .2s,transform .08s;
+  flex-wrap:wrap;
+  position:relative;z-index:1;
+  will-change:transform;
+  cursor:grab;
+  margin-bottom:0;
+}
+.pending-item:active{cursor:grabbing}
+.pending-item.ready{border-left:3px solid var(--green);background:linear-gradient(90deg,rgba(5,150,105,.03),transparent 40%)}
+.pending-item.swiping{transition:none !important}
+.pending-item.swipe-out{
+  transform:translateX(-110%) !important;
+  transition:transform .25s ease-in !important;
+  opacity:0;
+}
+.pi-left{flex:1;min-width:180px}
+.pi-name{font-size:14px;font-weight:700;color:var(--text)}
+.pi-meta{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.7}
+.pi-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex-shrink:0}
+.size-badge{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;background:var(--primary);color:#fff;padding:4px 12px;border-radius:var(--radius-xs)}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px}
+.chip-wait{background:#FEF9C3;color:#854D0E;border:1px solid #FDE047}
+.chip-ready{background:#DCFCE7;color:#14532D;border:1px solid #86EFAC}
+.chip-rep{background:var(--red-bg);color:#991B1B;border:1px solid #FECACA}
+.chip-new{background:var(--green-bg);color:#065F46;border:1px solid #A7F3D0}
+.chip-blue{background:var(--primary-bg);color:#1E40AF;border:1px solid #BFDBFE}
+.chip-teal{background:var(--teal-bg);color:var(--teal);border:1px solid #A5F3FC}
+.chip-amber{background:var(--amber-bg);color:var(--amber);border:1px solid #FDE68A}
+.chip-gray{background:var(--surface3);color:var(--muted);border:1px solid var(--border)}
+.last-issued-chip{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;color:var(--muted);background:var(--surface3);border:1px solid var(--border);border-radius:5px;padding:2px 8px;margin-top:5px;font-weight:500}
+.btn-issue{
+  padding:6px 16px;
+  background:linear-gradient(135deg,#059669,#0d9f72);
+  color:#fff;border:none;
+  border-radius:var(--radius-xs);
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:12px;font-weight:700;
+  cursor:pointer;
+  position:relative;overflow:hidden;
+  box-shadow:0 2px 8px rgba(5,150,105,.35);
+  transition:box-shadow .2s,transform .15s,background .3s;
+  letter-spacing:.02em;
+  min-width:64px;
+}
+/* Idle shimmer sweep on hover */
+.btn-issue::before{
+  content:'';
+  position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.28) 50%,transparent 100%);
+  transform:translateX(-100%);
+  transition:transform .5s ease;
+  pointer-events:none;
+}
+.btn-issue:hover:not(:disabled){
+  box-shadow:0 4px 16px rgba(5,150,105,.5);
+  transform:translateY(-1px);
+}
+.btn-issue:hover:not(:disabled)::before{ transform:translateX(100%); }
+.btn-issue:active:not(:disabled){
+  transform:translateY(0) scale(.97);
+  box-shadow:0 1px 4px rgba(5,150,105,.3);
+}
+/* Progress fill bar — sits behind text via ::after */
+.btn-issue::after{
+  content:'';
+  position:absolute;inset:0;right:auto;
+  width:0%;
+  background:rgba(255,255,255,.22);
+  transition:none;
+  pointer-events:none;
+}
+/* Filling state — driven by JS class */
+.btn-issue.filling::after{
+  width:100%;
+  transition:width .8s cubic-bezier(.4,0,.2,1);
+}
+/* Success state */
+.btn-issue.issued{
+  background:linear-gradient(135deg,#047857,#065f46);
+  box-shadow:0 2px 12px rgba(4,120,87,.5);
+  animation:none;
+  transform:scale(1.06);
+  transition:transform .18s cubic-bezier(.34,1.56,.64,1),background .2s;
+}
+@keyframes checkPop{
+  0%  {transform:scale(.5);opacity:0}
+  60% {transform:scale(1.25)}
+  100%{transform:scale(1);opacity:1}
+}
+.btn-issue.issued .issue-check{
+  display:inline-block;
+  animation:checkPop .35s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+/* Pulse on idle ready-to-issue buttons */
+@keyframes issue-pulse{
+  0%  {box-shadow:0 0 0 0 rgba(5,150,105,.55)}
+  70% {box-shadow:0 0 0 8px rgba(5,150,105,0)}
+  100%{box-shadow:0 0 0 0 rgba(5,150,105,0)}
+}
+.btn-issue:not(:disabled):not(.filling):not(.issued){
+  animation:issue-pulse 2.2s ease-out infinite;
+}
+.btn-issue:disabled{
+  background:var(--surface3);color:var(--muted2);
+  border:1px solid var(--border);box-shadow:none;
+  cursor:not-allowed;animation:none;
+}
+
+/* TABLE */
+.table-wrap{border-radius:var(--radius-sm);border:1px solid var(--border);overflow:hidden}
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table thead{background:var(--surface3)}
+.data-table th{text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:10px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
+.data-table td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tbody tr:hover td{background:var(--surface2)}
+.mono{font-family:'JetBrains Mono',monospace;font-size:12px}
+
+/* INVENTORY CARDS */
+.inv-stock-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:10px}
+.inv-stock-card{border-radius:var(--radius-sm);padding:14px 12px;text-align:center;border:1.5px solid transparent;transition:transform .15s,box-shadow .15s;min-height:160px}
+.inv-stock-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.inv-stock-card.ok{background:var(--green-bg);border-color:#A7F3D0}.inv-stock-card.low{background:var(--amber-bg);border-color:#FDE68A}.inv-stock-card.zero{background:var(--red-bg);border-color:#FECACA}
+.isc-size{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--muted)}
+.isc-num{font-size:30px;font-weight:800;margin:4px 0 2px;line-height:1;letter-spacing:-.03em}
+.inv-stock-card.ok .isc-num{color:var(--green)}.inv-stock-card.low .isc-num{color:var(--amber)}.inv-stock-card.zero .isc-num{color:var(--red)}
+.isc-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-top:5px}
+.inv-stock-card.ok .isc-lbl{color:#059669}.inv-stock-card.low .isc-lbl{color:var(--amber)}.inv-stock-card.zero .isc-lbl{color:var(--red)}
+.empty-state{text-align:center;padding:36px 20px;color:var(--muted);font-size:13px}
+.empty-state svg{opacity:.3;margin-bottom:10px;display:block;margin-left:auto;margin-right:auto}
+.inv-add-grid{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end}
+
+/* ── PURCHASE ORDERS ── */
+.po-form-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:12px;align-items:end}
+.po-status-open{background:#DBEAFE;color:#1E40AF;border:1px solid #BFDBFE}
+.po-status-partial{background:var(--amber-bg);color:var(--amber);border:1px solid #FDE68A}
+.po-status-closed{background:var(--green-bg);color:var(--green);border:1px solid #A7F3D0}
+.po-progress-wrap{display:flex;align-items:center;gap:8px;min-width:120px}
+.po-progress-bar{flex:1;height:6px;background:var(--surface3);border-radius:3px;overflow:hidden}
+.po-progress-fill{height:100%;border-radius:3px;transition:width .4s}
+.po-pct{font-size:11px;font-weight:700;min-width:32px;text-align:right}
+
+/* DASHBOARD */
+.dash-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.dash-kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:18px 20px;box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:14px;transition:box-shadow .2s,transform .15s}
+.dash-kpi:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.kpi-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px}
+.kpi-icon.blue{background:var(--primary-bg)}.kpi-icon.green{background:var(--green-bg)}.kpi-icon.amber{background:var(--amber-bg)}.kpi-icon.red{background:var(--red-bg)}
+.kpi-val{font-size:26px;font-weight:800;line-height:1;letter-spacing:-.02em}
+.kpi-val.blue{color:var(--primary)}.kpi-val.green{color:var(--green)}.kpi-val.amber{color:var(--amber)}.kpi-val.red{color:var(--red)}
+.kpi-lbl{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:4px}
+.dash-2col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.dash-full{margin-bottom:16px}
+.bar-chart{margin-top:8px}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.bar-dept{font-size:12px;font-weight:600;color:var(--text2);min-width:110px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{flex:1;height:22px;background:var(--surface3);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;font-size:11px;font-weight:700;color:#fff;white-space:nowrap;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.bar-count{font-size:12px;font-weight:700;color:var(--text2);min-width:28px;text-align:right}
+.sbar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.sbar-dept{font-size:12px;font-weight:600;color:var(--text2);min-width:110px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sbar-track{flex:1;height:22px;background:var(--surface3);border-radius:4px;overflow:hidden;display:flex}
+.sbar-seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.sbar-legend{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap}
+.sbar-leg-item{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);font-weight:600}
+.sbar-leg-dot{width:10px;height:10px;border-radius:3px}
+.donut-wrap{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.donut-svg{flex-shrink:0}
+.donut-legend{display:flex;flex-direction:column;gap:8px;flex:1;min-width:120px}
+.donut-leg-item{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.donut-leg-left{display:flex;align-items:center;gap:7px}
+.donut-leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.donut-leg-name{font-size:12px;font-weight:600;color:var(--text2)}
+.donut-leg-val{font-size:12px;font-weight:700;color:var(--text)}
+.donut-leg-pct{font-size:10px;color:var(--muted);font-weight:600}
+.dash-refresh{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--primary);cursor:pointer;background:none;border:none;font-family:'Plus Jakarta Sans',sans-serif;padding:6px 10px;border-radius:6px;transition:background .15s,color .2s}
+.dash-refresh:hover{background:var(--primary-bg)}
+.dash-refresh.spin svg{animation:spin .7s linear infinite}
+.dash-refresh.auto-refreshed{color:var(--green)}
+.dept-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.dept-table th{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:8px 12px;border-bottom:2px solid var(--border);text-align:left;white-space:nowrap}
+.dept-table td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.dept-table tr:last-child td{border-bottom:none}
+.dept-table tbody tr:hover td{background:var(--surface2)}
+
+/* FOOTER */
+.footer{max-width:980px;margin:40px auto 0;padding:16px 20px 0;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.footer-left{font-size:11.5px;color:var(--muted)}
+.footer-right{font-size:11.5px;color:var(--muted2)}
+
+/* AWAITING STOCK INLINE EXPAND TOOLTIP */
+.wait-breakdown{
+  max-height:0;overflow:hidden;
+  transition:max-height .25s ease, opacity .2s, margin-top .2s;
+  opacity:0;margin-top:0;
+}
+.wait-breakdown.open{
+  max-height:200px;opacity:1;margin-top:8px;
+}
+.wait-bd-inner{
+  border-top:1px solid rgba(217,119,6,.2);
+  padding-top:8px;
+}
+.wait-bd-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:3px 0;font-size:11px;
+}
+.wait-bd-sz{font-weight:700;color:var(--text2);font-family:'JetBrains Mono',monospace}
+.wait-bd-bar-wrap{flex:1;margin:0 10px;height:5px;background:var(--surface3);border-radius:3px;overflow:hidden}
+.wait-bd-bar{height:100%;background:var(--amber);border-radius:3px;transition:width .4s ease}
+.wait-bd-bar.green{background:var(--green)}
+.wait-bd-qty{font-weight:800;color:var(--amber);min-width:20px;text-align:right;font-size:11px}
+.wait-bd-qty.green{color:var(--green)}
+
+/* TAB REFRESH BUTTON */
+.tab-refresh{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-xs);font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;transition:all .15s}
+.tab-refresh:hover{background:var(--primary-bg);border-color:#BFDBFE;color:var(--primary)}
+.tab-refresh svg{transition:transform .5s}
+.tab-refresh.spinning svg{transform:rotate(360deg)}
+.tab-refresh.auto-refreshed{border-color:#A7F3D0;color:var(--green);background:var(--green-bg)}
+.stat-card{transition:box-shadow .25s,transform .2s,outline .15s}
+.stat-card:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
+@keyframes countUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.stat-value.animating,.kpi-val.animating{display:inline-block;animation:countUp .4s cubic-bezier(.34,1.56,.64,1)}
+.dash-kpi{transition:box-shadow .25s,transform .2s}
+.dash-kpi:hover{box-shadow:0 6px 24px rgba(0,0,0,.1);transform:translateY(-2px)}
+.kpi-icon{transition:transform .2s}
+.dash-kpi:hover .kpi-icon{transform:scale(1.12) rotate(-4deg)}
+.inv-stock-card{transition:transform .2s,box-shadow .2s,border-color .2s}
+.inv-stock-card:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.pending-wrap:hover .pending-item:not(.swiping){border-color:var(--border2);box-shadow:var(--shadow-sm)}
+.section{transition:box-shadow .2s}
+.section:hover{box-shadow:0 2px 14px rgba(0,0,0,.07)}
+
+@media(max-width:700px){
+  .topbar{padding:0 16px}
+  .shell{padding:16px 12px 0}
+  .form-grid,.inv-add-grid,.po-form-grid,.form-grid-3{grid-template-columns:1fr}
+  .stat-grid,.dash-kpi-grid{grid-template-columns:1fr 1fr}
+  .dash-2col{grid-template-columns:1fr}
+  .section{padding:18px 14px}
+  .action-row{flex-direction:column}
+  .search-wrap{max-width:100%}
+  .topbar-date{display:none}
+  .bar-dept,.sbar-dept{min-width:80px;max-width:80px}
+}
+</style>
+</head>
+<body>
+
+<!-- ── INITIAL LOADING SCREEN ── -->
+<div id="initLoader">
+  <div class="init-logo">👟</div>
+  <div class="init-title">Safety Shoe Portal</div>
+  <div class="init-sub">HLL Lifecare Limited · Peroorkada Factory</div>
+  <div class="init-bar-wrap"><div class="init-bar"></div></div>
+  <div class="init-status" id="initStatus">Loading data…</div>
+</div>
+
+<div id="loader"><div class="spin-ring"></div><p id="loaderText">Loading…</p></div>
+
+<header class="topbar">
+  <div class="topbar-brand">
+    <div class="brand-icon">👟</div>
+    <div><div class="brand-name">SafetyShoe Portal</div><div class="brand-sub">PPE Distribution System</div></div>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-date" id="topDate"></div>
+    <div class="topbar-status"><div class="status-dot"></div>System Online</div>
+  </div>
+</header>
+
+<div class="shell">
+  <div class="page-title">
+    <h2>Safety Shoe Distribution</h2>
+    <p>Manage requests, track pending status, issue shoes and control inventory</p>
+  </div>
+
+  <div class="nav-tabs-wrap">
+    <nav class="nav-tabs">
+      <button class="nav-tab active" onclick="showTab('request',this)">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        <span class="tab-label">New Request</span>
+      </button>
+      <button class="nav-tab" onclick="showTab('pending',this)">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 6v6l4 2"/></svg>
+        <span class="tab-label">Pending List</span>
+      </button>
+      <button class="nav-tab" onclick="showTab('issued',this)">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span class="tab-label">Issued List</span>
+      </button>
+      <button class="nav-tab" onclick="showTab('inventory',this)">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/></svg>
+        <span class="tab-label">Stock Management</span>
+      </button>
+      <button class="nav-tab" onclick="showTab('po',this)">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+        <span class="tab-label">Purchase Orders</span>
+      </button>
+      <button class="nav-tab" onclick="showTab('dashboard',this)">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span class="tab-label">Dashboard</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ═══════════════════ TAB 1 — NEW REQUEST ═══════════════════ -->
+  <div class="panel active" id="tab-request">
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title"><div class="section-icon icon-blue"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#1D4ED8" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>New Shoe Request</div>
+      </div>
+      <div class="info-strip"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v4m0 4h.01"/></svg>Eligibility is checked automatically when you enter a Card No. Employees must not have received shoes within the last 12 months.</div>
+      <div class="form-grid">
+        <div class="form-group"><span class="form-label">Employee Name</span><input class="form-input" type="text" id="empName" placeholder="Full name" list="empNameList" autocomplete="off" oninput="onEmpNameInput()"/><datalist id="empNameList"></datalist></div>
+        <div class="form-group">
+          <span class="form-label">Card No.</span>
+          <input class="form-input" type="text" id="cardNo" placeholder="e.g. EMP-1042"
+            oninput="clearEligibility()"
+            onblur="checkCardEligibility()"/>
+          <div id="eligBadge" style="display:none;margin-top:6px;padding:8px 12px;border-radius:var(--radius-xs);font-size:12px;font-weight:600;display:flex;align-items:center;gap:7px"></div>
+        </div>
+        <div class="form-group"><span class="form-label">Department</span><input class="form-input" type="text" id="dept" placeholder="e.g. Production" list="deptList" autocomplete="off"/><datalist id="deptList"></datalist></div>
+        <div class="form-group"><span class="form-label">Shoe Size (UK)</span>
+          <select class="form-select" id="shoeSize"><option value="">— Select size —</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option></select>
+        </div>
+        <div class="form-group"><span class="form-label">Request Date</span><input class="form-input" type="date" id="reqDate"/></div>
+        <div class="form-group"><span class="form-label">Reason</span>
+          <select class="form-select" id="reason" onchange="onReasonChange()"><option value="New">New Issue</option><option value="Damaged/Replacement">Damaged / Replacement</option></select>
+        </div>
+      </div>
+      <div class="alert alert-red" id="dupAlert"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg><span id="dupMsg"></span></div>
+      <div class="alert alert-amber" id="bypassAlert"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" style="flex-shrink:0"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
+        <div>Marked as <strong>Damaged / Replacement</strong> — the 12-month rule still applies unless bypassed below.
+          <label><input type="checkbox" id="bypassCheck"/> Bypass eligibility check (damaged shoe replacement)</label>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <button class="btn btn-primary btn-full" id="btnSubmit" onclick="submitRequest()"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>Submit Request</button>
+      <div class="msg" id="reqMsg"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ TAB 2 — PENDING LIST ═══════════════════ -->
+  <div class="panel" id="tab-pending">
+    <div class="stat-grid" style="grid-template-columns:repeat(4,1fr)">
+      <div class="stat-card sc-total"><div class="stat-label">Total Pending</div><div class="stat-value" id="statTotal">—</div><div class="stat-sub">All active requests</div></div>
+      <div class="stat-card sc-wait" id="cardWait" onclick="sortPendingBy('wait')" style="cursor:pointer;user-select:none" title="Click to sort — Awaiting Stock first"
+           onmouseenter="showWaitBreakdown()" onmouseleave="hideWaitBreakdown()">
+        <div class="stat-label">Awaiting Stock <span style="font-size:9px;opacity:.7">▲ sort</span></div>
+        <div class="stat-value" id="statWait">—</div>
+        <div class="stat-sub">No stock available</div>
+        <div class="wait-breakdown" id="waitBreakdown">
+          <div class="wait-bd-inner" id="waitBreakdownInner"></div>
+        </div>
+      </div>
+      <div class="stat-card sc-ready" id="cardReady" onclick="sortPendingBy('ready')" style="cursor:pointer;user-select:none" title="Click to sort — Ready to Issue first"
+           onmouseenter="showReadyBreakdown()" onmouseleave="hideReadyBreakdown()">
+        <div class="stat-label">Ready to Issue <span style="font-size:9px;opacity:.7">▲ sort</span></div>
+        <div class="stat-value" id="statReady">—</div>
+        <div class="stat-sub">Stock allocated</div>
+        <div class="wait-breakdown" id="readyBreakdown">
+          <div class="wait-bd-inner" id="readyBreakdownInner"></div>
+        </div>
+      </div>
+      <div class="stat-card" id="cardIneligible" onclick="sortPendingBy('ineligible')" style="position:relative;overflow:hidden;cursor:pointer;user-select:none" title="Click to sort — Not Eligible first">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--red)"></div>
+        <div class="stat-label">Not Eligible <span style="font-size:9px;opacity:.7">▲ sort</span></div>
+        <div class="stat-value" id="statIneligible" style="color:var(--red)">—</div>
+        <div class="stat-sub">Within 12-month period</div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title"><div class="section-icon icon-amber"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#D97706" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 6v6l4 2"/></svg></div>Pending Requests</div>
+        <div class="action-row" style="margin:0">
+          <button class="tab-refresh" onclick="manualRefresh('pending')" id="rfbtn-pending"><svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>Refresh</button>
+          <button class="btn btn-amber" onclick="sendRequirementList()"><svg width="13" height="13" fill="currentColor" viewBox="0 0 20 20"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>Send Requirement List</button>
+          <button class="btn btn-green" onclick="sendReadyForIssue()"><svg width="13" height="13" fill="currentColor" viewBox="0 0 20 20"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>Send Ready for Issue</button>
+        </div>
+      </div>
+      <div class="toolbar" style="gap:10px">
+        <div class="search-wrap" style="flex:1"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/></svg><input class="search-input" type="text" id="pendingSearch" placeholder="Search name, card, dept…" oninput="filterPending()"/></div>
+        <select class="form-select" id="pendingSizeFilter" onchange="filterPending()" style="height:36px;padding:5px 10px;min-width:110px;font-size:12px" title="Filter by shoe size">
+          <option value="">All Sizes</option>
+          <option>5</option><option>6</option><option>7</option><option>8</option>
+          <option>9</option><option>10</option><option>11</option><option>12</option>
+        </select>
+      </div><!-- end toolbar -->
+      <div id="pendingList"><div class="skel skel-row"></div><div class="skel skel-row"></div><div class="skel skel-row"></div></div>
+      <div class="msg" id="pendingMsg"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ TAB 3 — ISSUED LIST ═══════════════════ -->
+  <div class="panel" id="tab-issued">
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title"><div class="section-icon icon-green"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#059669" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>Shoe Issuance Records</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="tab-refresh" onclick="manualRefresh('issued')" id="rfbtn-issued"><svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>Refresh</button>
+          <button class="btn btn-green btn-sm" onclick="exportIssued('excel')">
+            <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export Excel
+          </button>
+          <button class="btn btn-red btn-sm" onclick="exportIssued('pdf')">
+            <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export PDF
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter bar -->
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;padding:14px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm)">
+        <div class="form-group" style="flex:1;min-width:140px;gap:5px">
+          <span class="form-label">Department</span>
+          <select class="form-select" id="filterDept" onchange="applyIssuedFilters()" style="height:36px;padding:5px 10px">
+            <option value="">All Departments</option>
+          </select>
+        </div>
+        <div class="form-group" style="min-width:110px;gap:5px">
+          <span class="form-label">Year</span>
+          <select class="form-select" id="filterYear" onchange="applyIssuedFilters()" style="height:36px;padding:5px 10px">
+            <option value="">All Years</option>
+          </select>
+        </div>
+        <div class="form-group" style="min-width:120px;gap:5px">
+          <span class="form-label">Month</span>
+          <select class="form-select" id="filterMonth" onchange="applyIssuedFilters()" style="height:36px;padding:5px 10px">
+            <option value="">All Months</option>
+            <option value="1">January</option><option value="2">February</option>
+            <option value="3">March</option><option value="4">April</option>
+            <option value="5">May</option><option value="6">June</option>
+            <option value="7">July</option><option value="8">August</option>
+            <option value="9">September</option><option value="10">October</option>
+            <option value="11">November</option><option value="12">December</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1;min-width:180px;gap:5px">
+          <span class="form-label">Search</span>
+          <div class="search-wrap" style="max-width:100%">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/></svg>
+            <input class="search-input" type="text" id="issuedSearch" placeholder="Name, card, size…" oninput="applyIssuedFilters()"/>
+          </div>
+        </div>
+        <button class="btn btn-amber btn-sm" onclick="clearIssuedFilters()" style="height:36px;align-self:flex-end">Clear</button>
+      </div>
+
+      <!-- Result count -->
+      <div id="issuedCount" style="font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:600"></div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>#</th><th>Employee</th><th>Card No.</th><th>Dept</th><th>Size</th><th>Reason</th><th>Requested</th><th>Issued On</th><th></th></tr></thead>
+          <tbody id="issuedBody"><tr><td colspan="9"><div class="empty-state">Loading…</div></td></tr></tbody>
+        </table>
+      </div>
+      <div class="msg" id="issuedMsg"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ TAB 4 — STOCK MANAGEMENT ═══════════════════ -->
+  <div class="panel" id="tab-inventory">
+    <div class="section">
+      <div class="section-header" style="cursor:pointer;margin-bottom:0" onclick="toggleInvForm()">
+        <div class="section-title"><div class="section-icon icon-blue"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#1D4ED8" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg></div>Add Stock Received</div>
+        <span id="invFormHint" style="font-size:12px;color:var(--primary);font-weight:600">Click to expand ▸</span>
+      </div>
+      <div id="invFormBody" style="display:none;margin-top:20px">
+        <!-- Column headers -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:6px;padding:0 2px">
+          <span style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.03em">Date Received</span>
+          <span style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.03em">Shoe Size (UK)</span>
+          <span style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.03em">Quantity</span>
+        </div>
+        <!-- 5 entry rows -->
+        <div id="invRows" style="display:flex;flex-direction:column;gap:8px">
+          <!-- rows injected by JS -->
+        </div>
+        <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-primary" id="btnAddInv" onclick="addInventory()">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            Add Stock
+          </button>
+          <button class="btn btn-amber" onclick="clearInvRows()">Clear</button>
+        </div>
+        <div class="msg" id="invMsg"></div>
+      </div>
+    </div>
+
+    <!-- In Order Stock card -->
+    <div class="section" style="padding:18px 24px">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <div style="width:40px;height:40px;border-radius:10px;background:var(--teal-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#0891B2" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/></svg>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">In Order Stock</div>
+          <div style="font-size:24px;font-weight:800;color:var(--teal,#0891B2);line-height:1.1;margin-top:3px" id="inOrderQty">—</div>
+          <div style="font-size:11px;color:var(--muted2);margin-top:2px">Total remaining qty across all open purchase orders</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title"><div class="section-icon icon-green"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#059669" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/></svg></div>Current Stock Level</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <button class="tab-refresh" onclick="manualRefresh('inventory')" id="rfbtn-inventory"><svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>Refresh</button>
+          <!-- Balance stock toggle -->
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;font-size:12px;font-weight:600;color:var(--muted)">
+          <span id="stockToggleLabel">Show All Stock</span>
+          <div style="position:relative;width:40px;height:22px;flex-shrink:0" onclick="toggleStockView()">
+            <input type="checkbox" id="stockToggle" style="opacity:0;position:absolute;inset:0;cursor:pointer;margin:0;z-index:1"/>
+            <div id="stockToggleTrack" style="position:absolute;inset:0;border-radius:11px;background:#D1D5DB;transition:background .2s"></div>
+            <div id="stockToggleThumb" style="position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .2s"></div>
+          </div>
+        </label>
+        </div>
+      </div>
+      <p style="font-size:11.5px;color:var(--muted);margin-bottom:14px" id="stockViewDesc">Showing total physical stock including pairs reserved for Ready-to-Issue requests.</p>
+      <div class="inv-stock-grid" id="invCards">
+        <div class="skel" style="height:120px;border-radius:8px"></div><div class="skel" style="height:120px;border-radius:8px"></div><div class="skel" style="height:120px;border-radius:8px"></div><div class="skel" style="height:120px;border-radius:8px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ TAB 5 — PURCHASE ORDERS ═══════════════════ -->
+  <div class="panel" id="tab-po">
+
+    <!-- Add PO — collapsible -->
+    <div class="section" id="poFormSection">
+      <div class="section-header" style="cursor:pointer;margin-bottom:0" onclick="togglePOForm()">
+        <div class="section-title"><div class="section-icon icon-teal"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#0891B2" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div>
+          Add New Purchase Order
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span id="poFormToggleHint" style="font-size:12px;color:var(--primary);font-weight:600">Click to expand ▸</span>
+        </div>
+      </div>
+      <div id="poFormBody" style="display:none;margin-top:20px">
+        <div class="info-strip"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v4m0 4h.01"/></svg>Received Qty updates automatically when stock is added via <strong>Stock Management</strong>. Mark the PO as Closed once fully received.</div>
+        <div class="form-grid">
+          <div class="form-group"><span class="form-label">PO Number</span><input class="form-input" type="text" id="poNumber" placeholder="e.g. PO-2025-001"/></div>
+          <div class="form-group"><span class="form-label">Vendor Name</span><input class="form-input" type="text" id="poVendor" placeholder="e.g. SafetyFirst Ltd"/></div>
+          <div class="form-group"><span class="form-label">Total Qty</span><input class="form-input" type="number" id="poQty" placeholder="e.g. 20" min="1"/></div>
+          <div class="form-group"><span class="form-label">PO Date</span><input class="form-input" type="date" id="poDate"/></div>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:10px;align-items:center">
+          <button class="btn btn-primary" id="btnAddPO" onclick="addPO()"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>Save Purchase Order</button>
+          <button class="btn btn-amber" onclick="togglePOForm()">Cancel</button>
+        </div>
+        <div class="msg" id="poMsg"></div>
+      </div>
+    </div>
+
+    <!-- Active POs table -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title"><div class="section-icon icon-teal"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#0891B2" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg></div>Active Purchase Orders</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <button class="tab-refresh" onclick="manualRefresh('po')" id="rfbtn-po"><svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>Refresh</button>
+          <div class="toolbar" style="margin:0">
+          <div class="search-wrap" style="max-width:280px"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/></svg><input class="search-input" type="text" id="poSearch" placeholder="Search PO No. or vendor…" oninput="filterPOs()"/></div>
+          </div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="poTable">
+          <thead>
+            <tr>
+              <th>PO Number</th>
+              <th>Vendor</th>
+              <th>Total Qty</th>
+              <th>Received Qty</th>
+              <th>Remaining Qty</th>
+              <th>PO Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="poBody"><tr><td colspan="8"><div class="empty-state">Loading…</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ TAB 6 — DASHBOARD ═══════════════════ -->
+  <div class="panel" id="tab-dashboard">
+    <div class="dash-kpi-grid">
+      <div class="dash-kpi"><div class="kpi-icon blue">📋</div><div><div class="kpi-val blue" id="dkTotal">—</div><div class="kpi-lbl">Total Requests</div></div></div>
+      <div class="dash-kpi"><div class="kpi-icon green">✅</div><div><div class="kpi-val green" id="dkIssued">—</div><div class="kpi-lbl">Total Issued</div></div></div>
+      <div class="dash-kpi"><div class="kpi-icon amber">⏳</div><div><div class="kpi-val amber" id="dkPending">—</div><div class="kpi-lbl">Still Pending</div></div></div>
+      <div class="dash-kpi"><div class="kpi-icon red">🏢</div><div><div class="kpi-val red" id="dkDepts">—</div><div class="kpi-lbl">Departments</div></div></div>
+    </div>
+    <div class="dash-2col">
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title"><div class="section-icon icon-amber"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#D97706" stroke-width="2.5"><path stroke-linecap="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></div>Pending by Department</div>
+          <button class="dash-refresh" id="btnRefresh" onclick="loadDashboard(true)"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>Refresh</button>
+        </div>
+        <div id="deptPendingChart"><div class="skel" style="height:180px"></div></div>
+      </div>
+      <div class="section">
+        <div class="section-header"><div class="section-title"><div class="section-icon icon-green"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#059669" stroke-width="2.5"><path stroke-linecap="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></div>Issued by Department</div></div>
+        <div id="deptIssuedChart"><div class="skel" style="height:180px"></div></div>
+      </div>
+    </div>
+    <div class="dash-2col">
+      <div class="section">
+        <div class="section-header"><div class="section-title"><div class="section-icon icon-blue"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#1D4ED8" stroke-width="2.5"><path stroke-linecap="round" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>Issued vs Pending</div></div>
+        <div id="stackedChart"><div class="skel" style="height:200px"></div></div>
+      </div>
+      <div class="section">
+        <div class="section-header"><div class="section-title"><div class="section-icon icon-purple"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#7C3AED" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg></div>Reason Breakdown</div></div>
+        <div id="reasonDonut"><div class="skel" style="height:200px"></div></div>
+      </div>
+    </div>
+    <div class="dash-full section">
+      <div class="section-header"><div class="section-title"><div class="section-icon icon-blue"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#1D4ED8" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 14h18M10 6h4M10 18h4"/></svg></div>Department-wise Summary</div></div>
+      <div class="table-wrap">
+        <table class="dept-table">
+          <thead><tr><th>Department</th><th>Total</th><th>Issued</th><th>Pending</th><th>Ready</th><th>Awaiting</th><th>New</th><th>Replacement</th><th>Fulfilment %</th></tr></thead>
+          <tbody id="deptTableBody"><tr><td colspan="9"><div class="empty-state">Loading…</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Size Distribution -->
+    <div class="dash-2col">
+      <div class="section">
+        <div class="section-header"><div class="section-title"><div class="section-icon icon-teal"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#0891B2" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></div>Size Distribution — Issued</div></div>
+        <div id="sizeIssuedChart"><div class="skel" style="height:180px"></div></div>
+      </div>
+      <div class="section">
+        <div class="section-header"><div class="section-title"><div class="section-icon icon-amber"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#D97706" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></div>Size Distribution — Pending</div></div>
+        <div id="sizePendingChart"><div class="skel" style="height:180px"></div></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /shell -->
+
+<footer class="footer">
+  <div class="footer-left">Safety &amp; Environment Department &nbsp;·&nbsp; 2026</div>
+  <div class="footer-right">Powered by Google Workspace &amp; Apps Script</div>
+</footer>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwVoTfIWO_GVR6k-tWa9fNim-6jF9MtVa498wWMiWmAID_TZ7_3PNCRmnVW1Hw8bXDqRA/exec";
+
+// INIT
+document.getElementById('reqDate').valueAsDate  = new Date();
+document.getElementById('poDate').valueAsDate   = new Date();
+document.getElementById('topDate').textContent  =
+  new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+
+// ── PRELOAD: fire immediately so data is ready before any tab is clicked ──
+// This single request fetches all tab data in one Apps Script call,
+// eliminating the cold-start delay on every tab switch.
+preloadAll();
+
+// ── CUSTOM MODAL (replaces confirm/alert — works inside Google Sites) ─────────
+// Sites blocks window.confirm() and window.alert(). We use an inline modal instead.
+let _modalResolve = null;
+
+function showModal(msg, onYes, onNo) {
+  document.getElementById('modalMsg').textContent = msg;
+  const m = document.getElementById('customModal');
+  const noBtn = document.getElementById('modalNo');
+  m.classList.add('show');
+  document.getElementById('modalYes').onclick = () => { m.classList.remove('show'); if(onYes) onYes(); };
+  noBtn.onclick = () => { m.classList.remove('show'); if(onNo) onNo(); };
+}
+
+function showAlert(msg) {
+  document.getElementById('alertMsg').textContent = msg;
+  const a = document.getElementById('customAlert');
+  a.classList.add('show');
+  document.getElementById('alertOk').onclick = () => a.classList.remove('show');
+}
+
+// ── LOADER ────────────────────────────────────────────────────
+const $loader = document.getElementById('loader');
+function showLoader(t){ document.getElementById('loaderText').textContent=t||'Loading…'; $loader.classList.add('show'); }
+function hideLoader(){ $loader.classList.remove('show'); }
+
+// ── DATE FORMAT DD-MMM-YYYY ───────────────────────────────────
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtDate(raw){
+  if(!raw || raw==='' || raw==='undefined' || raw==='null' || raw===null) return '—';
+  let d;
+  if(typeof raw==='string' && raw.includes('/')){
+    const p=raw.split('/');
+    d=new Date(p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0'));
+  } else { d=new Date(raw); }
+  if(isNaN(d.getTime())) return String(raw);
+  return String(d.getDate()).padStart(2,'0')+'-'+MONTHS[d.getMonth()]+'-'+d.getFullYear();
+}
+
+// ── HTTP ──────────────────────────────────────────────────────
+// Background fire-and-forget POST — no loader, no UI blocking
+function postBg(payload, onDone, onErr) {
+  fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify(payload) })
+    .then(r => r.json())
+    .then(res => { if(onDone) onDone(res); })
+    .catch(err => { if(onErr) onErr(err); });
+}
+// Standard awaitable POST (used for Issue button where we need UI update)
+function post(payload){ return fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload)}).then(r=>r.json()); }
+function get(params){ return fetch(SCRIPT_URL+'?'+new URLSearchParams(params)).then(r=>r.json()); }
+function setMsg(id,txt,t){ const e=document.getElementById(id); e.textContent=txt; e.className='msg '+(t==='ok'?'ok':t==='err'?'err':'inf'); }
+
+// ── TAB NAV ───────────────────────────────────────────────────
+const _loaded  = {};
+const _loading = new Set();
+let   _preloadDone = false;
+
+// ── PRELOAD ───────────────────────────────────────────────────
+function preloadAll(){
+  const initL   = document.getElementById('initLoader');
+  const initSt  = document.getElementById('initStatus');
+
+  get({action:'getAll'}).then(data=>{
+    if(data.pending)   _pending = data.pending;
+    if(data.issued)  { _issued  = data.issued; populateDeptList(); _populateIssuedFilters(data.issued); _buildEmpLookup(); }
+    if(data.inventory){
+      _invData = data.inventory;
+      const el = document.getElementById('inOrderQty');
+      if(el) el.textContent = (data.inOrderQty||0)+' pairs';
+    }
+    if(data.pos) _pos = data.pos;
+    _preloadDone = true;
+
+    // Dismiss loading screen
+    if(initSt) initSt.textContent = 'Ready ✓';
+    setTimeout(()=>{ if(initL) initL.classList.add('hide'); }, 300);
+    setTimeout(()=>{ if(initL) initL.style.display='none'; }, 900);
+
+    // Render active tab
+    const active = document.querySelector('.panel.active');
+    if(active){ const n=active.id.replace('tab-',''); if(!_loaded[n]&&!_loading.has(n)) _applyCache(n); }
+    _startAutoRefresh();
+  }).catch(()=>{
+    _preloadDone = false;
+    if(initSt) initSt.textContent = 'Failed to load. Please refresh the page.';
+    if(initSt) initSt.style.color = '#DC2626';
+  });
+}
+
+// ── AWAITING STOCK INLINE BREAKDOWN ──────────────────────────
+function showWaitBreakdown(){
+  const waiting = _pending.filter(r=>!r.readyToIssue&&!r.ineligible);
+  const panel   = document.getElementById('waitBreakdown');
+  const inner   = document.getElementById('waitBreakdownInner');
+  if(!waiting.length||!panel) return;
+  const sizeMap={};
+  waiting.forEach(r=>{ const s=String(r.size||'').trim(); if(s) sizeMap[s]=(sizeMap[s]||0)+1; });
+  const entries=Object.entries(sizeMap).sort((a,b)=>Number(a[0])-Number(b[0]));
+  const max=Math.max(...entries.map(([,v])=>v),1);
+  inner.innerHTML=entries.map(([sz,qty])=>{
+    const pct=Math.round(qty/max*100);
+    return `<div class="wait-bd-row"><span class="wait-bd-sz">UK ${sz}</span><div class="wait-bd-bar-wrap"><div class="wait-bd-bar" style="width:${pct}%"></div></div><span class="wait-bd-qty">${qty}</span></div>`;
+  }).join('');
+  panel.classList.add('open');
+}
+function hideWaitBreakdown(){
+  const p=document.getElementById('waitBreakdown'); if(p) p.classList.remove('open');
+}
+
+function showReadyBreakdown(){
+  const ready = _pending.filter(r=>r.readyToIssue);
+  const panel = document.getElementById('readyBreakdown');
+  const inner = document.getElementById('readyBreakdownInner');
+  if(!ready.length || !panel) return;
+  const sizeMap={};
+  ready.forEach(r=>{ const s=String(r.size||'').trim(); if(s) sizeMap[s]=(sizeMap[s]||0)+1; });
+  const entries=Object.entries(sizeMap).sort((a,b)=>Number(a[0])-Number(b[0]));
+  const max=Math.max(...entries.map(([,v])=>v),1);
+  inner.innerHTML=entries.map(([sz,qty])=>{
+    const pct=Math.round(qty/max*100);
+    return `<div class="wait-bd-row"><span class="wait-bd-sz">UK ${sz}</span><div class="wait-bd-bar-wrap"><div class="wait-bd-bar green" style="width:${pct}%"></div></div><span class="wait-bd-qty green">${qty}</span></div>`;
+  }).join('');
+  panel.classList.add('open');
+}
+function hideReadyBreakdown(){
+  const p=document.getElementById('readyBreakdown'); if(p) p.classList.remove('open');
+}
+
+// ── SILENT BACKGROUND AUTO-REFRESH ───────────────────────────
+const AUTO_REFRESH_MS = 60000;
+let   _autoRefreshTimer  = null;
+let   _lastUserActivity  = Date.now();
+['click','keydown','touchstart','scroll'].forEach(ev=>
+  document.addEventListener(ev,()=>{ _lastUserActivity=Date.now(); },{passive:true})
+);
+
+function _silentUpdateStats(){
+  const total=_pending.length;
+  const wait =_pending.filter(r=>!r.readyToIssue&&!r.ineligible).length;
+  const ready=_pending.filter(r=>r.readyToIssue).length;
+  const inel =_pending.filter(r=>r.ineligible).length;
+  [{id:'statTotal',v:total},{id:'statWait',v:wait},{id:'statReady',v:ready},{id:'statIneligible',v:inel}]
+    .forEach(({id,v})=>{ const el=document.getElementById(id); if(el&&parseInt(el.textContent)!==v) animateCounter(id,v); });
+}
+
+function _startAutoRefresh(){
+  if(_autoRefreshTimer) clearInterval(_autoRefreshTimer);
+  _autoRefreshTimer=setInterval(()=>{
+    if(document.hidden) return;
+    if(Date.now()-_lastUserActivity<15000) return;
+    // Fetch silently — only update cache variables, never touch the DOM
+    get({action:'getAll'}).then(data=>{
+      if(data.pending)   _pending=data.pending;
+      if(data.issued)  { _issued=data.issued; _buildEmpLookupIfReady(); }
+      if(data.inventory) _invData=data.inventory;
+      if(data.pos)       _pos=data.pos;
+      if(data.inOrderQty!=null){ const el=document.getElementById('inOrderQty'); if(el) el.textContent=data.inOrderQty+' pairs'; }
+      // Reset loaded flags so next tab click re-renders from fresh cache
+      Object.keys(_loaded).forEach(k=>{ _loaded[k]=false; });
+      _silentUpdateStats();
+    }).catch(()=>{});
+  }, AUTO_REFRESH_MS);
+}
+
+// ── MANUAL REFRESH ────────────────────────────────────────────
+function manualRefresh(name){
+  const btn=document.getElementById('rfbtn-'+name);
+  if(btn) btn.classList.add('spinning');
+  reloadTab(name);
+  const check=()=>{
+    if(_loaded[name]){
+      if(btn){ btn.classList.remove('spinning'); btn.classList.add('auto-refreshed'); setTimeout(()=>btn.classList.remove('auto-refreshed'),1500); }
+    } else setTimeout(check,200);
+  };
+  setTimeout(check,300);
+}
+
+// ── APPLY CACHE → RENDER ──────────────────────────────────────
+function _applyCache(name){
+  _loading.delete(name);
+  _loaded[name]=true;
+  if(name==='pending'){ updateStats(); renderPending(_pending); }
+  else if(name==='issued'){ renderIssued(_issued); populateDeptList(); _buildEmpLookupIfReady(); }
+  else if(name==='inventory'){ renderInvCards(_invData); }
+  else if(name==='po'){ renderPOs(_pos); }
+  else if(name==='dashboard'){ buildDashboard(_pending,_issued); const rb=document.getElementById('btnRefresh'); if(rb) rb.classList.remove('spin'); }
+}
+
+// ── MARK STALE (mutations) ────────────────────────────────────
+function markStale(...tabs){ tabs.forEach(t=>{ _loaded[t]=false; }); }
+
+// ── POPULATE DEPT LIST ────────────────────────────────────────
+function populateDeptList(){
+  const dl=document.getElementById('deptList'); if(!dl||!_issued.length) return;
+  const depts=[...new Set(_issued.map(r=>r.dept).filter(Boolean))].sort();
+  dl.innerHTML=depts.map(d=>`<option value="${d}">`).join('');
+}
+
+// ── SHOW TAB ──────────────────────────────────────────────────
+function showTab(name,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+
+  if(_loaded[name]) return;       // already rendered with current data
+  if(_loading.has(name)) return;  // fetch in flight, skeleton showing
+
+  if(_preloadDone){
+    _applyCache(name);   // data in cache — render instantly
+  } else {
+    reloadTab(name);     // preload not done — fetch individually
+  }
+}
+
+// ── SKELETON HELPERS ──────────────────────────────────────────
+function showPendingSkeleton(){ document.getElementById('pendingList').innerHTML='<div class="skel skel-row"></div><div class="skel skel-row"></div><div class="skel skel-row"></div>'; }
+function showIssuedSkeleton(){ document.getElementById('issuedBody').innerHTML='<tr><td colspan="9"><div class="empty-state">Loading…</div></td></tr>'; }
+function showInvSkeleton(){ document.getElementById('invCards').innerHTML='<div class="skel" style="height:120px;border-radius:8px"></div><div class="skel" style="height:120px;border-radius:8px"></div><div class="skel" style="height:120px;border-radius:8px"></div><div class="skel" style="height:120px;border-radius:8px"></div>'; }
+function showPOSkeleton(){ document.getElementById('poBody').innerHTML='<tr><td colspan="8"><div class="empty-state">Loading…</div></td></tr>'; }
+function showDashSkeleton(){ const el=document.getElementById('deptPendingChart'); if(el) el.innerHTML='<div class="skel" style="height:180px"></div>'; }
+
+// ── RELOAD TAB (server fetch) ─────────────────────────────────
+function reloadTab(name){
+  if(_loading.has(name)) return;
+  _loading.add(name);
+  _loaded[name]=false;
+  if(name==='pending'){
+    showPendingSkeleton();
+    get({action:'getPending'}).then(d=>{ _pending=d; _applyCache('pending'); }).catch(()=>{ _loading.delete('pending'); document.getElementById('pendingList').innerHTML='<div class="empty-state">Failed — click Refresh to retry.</div>'; });
+  } else if(name==='issued'){
+    showIssuedSkeleton();
+    get({action:'getIssued'}).then(d=>{ _issued=d; _applyCache('issued'); }).catch(()=>{ _loading.delete('issued'); document.getElementById('issuedBody').innerHTML='<tr><td colspan="9"><div class="empty-state">Failed.</div></td></tr>'; });
+  } else if(name==='inventory'){
+    showInvSkeleton();
+    Promise.all([get({action:'getInventory'}),get({action:'getInOrderQty'})]).then(([inv,io])=>{
+      _invData=inv; const el=document.getElementById('inOrderQty'); if(el) el.textContent=(io.inOrderQty||0)+' pairs';
+      _applyCache('inventory');
+    }).catch(()=>{ _loading.delete('inventory'); document.getElementById('invCards').innerHTML='<div class="empty-state">Failed.</div>'; });
+  } else if(name==='po'){
+    showPOSkeleton();
+    get({action:'getPOs'}).then(d=>{ _pos=d; _applyCache('po'); }).catch(()=>{ _loading.delete('po'); document.getElementById('poBody').innerHTML='<tr><td colspan="8"><div class="empty-state">Failed.</div></td></tr>'; });
+  } else if(name==='dashboard'){
+    showDashSkeleton();
+    const rb=document.getElementById('btnRefresh'); if(rb) rb.classList.add('spin');
+    Promise.all([get({action:'getPending'}),get({action:'getIssued'})]).then(([pd,id])=>{ _pending=pd; _issued=id; _applyCache('dashboard'); }).catch(()=>{ _loading.delete('dashboard'); if(rb) rb.classList.remove('spin'); });
+  }
+}
+
+// ── TAB 1: NEW REQUEST ────────────────────────────────────────
+function onReasonChange(){
+  const r=document.getElementById('reason').value;
+  document.getElementById('bypassAlert').classList.toggle('show',r==='Damaged/Replacement');
+  document.getElementById('reason').classList.toggle('sel-replace',r==='Damaged/Replacement');
+  if(r!=='Damaged/Replacement') document.getElementById('bypassCheck').checked=false;
+}
+function clearDupWarn(){ document.getElementById('dupAlert').classList.remove('show'); }
+
+// ── BACKGROUND ELIGIBILITY CHECK ─────────────────────────────
+let _eligCache = null;  // { cardNo, eligible, lastIssueDate, monthsAgo }
+let _eligTimer  = null;
+
+function clearEligibility(){
+  clearDupWarn();
+  _eligCache = null;
+  const badge = document.getElementById('eligBadge');
+  badge.style.display = 'none';
+  badge.textContent   = '';
+}
+
+function checkCardEligibility(){
+  const cardNo = document.getElementById('cardNo').value.trim();
+  if(!cardNo){ clearEligibility(); return; }
+
+  // Client-side duplicate check first — instant
+  const dup = _pending.find(p => p.cardNo.trim().toLowerCase() === cardNo.toLowerCase());
+  if(dup){
+    _showEligBadge('dup', 'Already has an active pending request for UK '+dup.size+' since '+fmtDate(dup.date));
+    document.getElementById('dupMsg').textContent = cardNo+' already has an active request for UK '+dup.size+'. Please resolve it first.';
+    document.getElementById('dupAlert').classList.add('show');
+    return;
+  }
+
+  // Show spinner while checking
+  _showEligBadge('checking', 'Checking eligibility…');
+
+  const date = document.getElementById('reqDate').value;
+  get({action:'getEligibility', cardNo, date})
+    .then(res => {
+      // Only apply if the card no hasn't changed while we were waiting
+      if(document.getElementById('cardNo').value.trim() !== cardNo) return;
+      _eligCache = { cardNo, ...res };
+      if(res.eligible){
+        _showEligBadge('ok', res.lastIssueDate
+          ? '✓ Eligible — last issued '+fmtDate(res.lastIssueDate)+' ('+res.monthsAgo+' months ago)'
+          : '✓ Eligible — no prior issue on record');
+      } else {
+        _showEligBadge('ineligible', '✗ Not eligible — last issued '+fmtDate(res.lastIssueDate)+' ('+res.monthsAgo+' months ago, within 12-month window)');
+      }
+    })
+    .catch(() => { _showEligBadge('', ''); }); // clear on error, don't block
+}
+
+function _showEligBadge(type, msg){
+  const badge = document.getElementById('eligBadge');
+  if(!msg){ badge.style.display='none'; return; }
+  badge.style.display = 'flex';
+
+  const styles = {
+    ok:         'background:#ECFDF5;color:#065F46;border:1px solid #A7F3D0',
+    ineligible: 'background:#FEF2F2;color:#991B1B;border:1px solid #FECACA',
+    dup:        'background:#FFFBEB;color:#92400E;border:1px solid #FDE68A',
+    checking:   'background:var(--surface3);color:var(--muted);border:1px solid var(--border)',
+    '':         'display:none'
+  };
+  badge.style.cssText = 'margin-top:6px;padding:8px 12px;border-radius:var(--radius-xs);font-size:12px;font-weight:600;display:flex;align-items:center;gap:7px;'+styles[type];
+  badge.textContent = msg;
+}
+
+function submitRequest(){
+  const name  =document.getElementById('empName').value.trim();
+  const cardNo=document.getElementById('cardNo').value.trim();
+  const dept  =document.getElementById('dept').value.trim();
+  const size  =document.getElementById('shoeSize').value;
+  const date  =document.getElementById('reqDate').value;
+  const reason=document.getElementById('reason').value;
+  const bypass=document.getElementById('bypassCheck').checked;
+
+  if(!name||!cardNo||!dept||!size||!date){ setMsg('reqMsg','Please fill in all fields before submitting.','err'); return; }
+
+  // Client-side duplicate check
+  const dup=_pending.find(p=>p.cardNo.trim().toLowerCase()===cardNo.toLowerCase());
+  if(dup){
+    document.getElementById('dupMsg').textContent=name+' ('+cardNo+') already has an active request for UK '+dup.size+' since '+fmtDate(dup.date)+'. Please resolve it first.';
+    document.getElementById('dupAlert').classList.add('show');
+    setMsg('reqMsg','Duplicate request detected.','err');
+    return;
+  }
+
+  // If background eligibility check already ran for this card, use cached result
+  // This makes submit instant — no extra round-trip needed
+  const cacheValid = _eligCache && _eligCache.cardNo.toLowerCase() === cardNo.toLowerCase();
+  if(cacheValid && !_eligCache.eligible && reason !== 'Damaged/Replacement' && !bypass){
+    // Already know they're ineligible — skip submit, go straight to modal
+    // We still need a rowIndex so we must submit and catch not_eligible server-side
+    // But we can warn the user right away
+    setMsg('reqMsg','⚠ Employee is not eligible (last issued '+fmtDate(_eligCache.lastIssueDate)+'). Submit anyway to add as Not Eligible.','inf');
+  }
+
+  const doSubmit = (overrideReason) => {
+    const btn=document.getElementById('btnSubmit');
+    btn.disabled=true;
+    setMsg('reqMsg','Submitting request…','inf');
+    const finalReason = overrideReason || reason;
+    postBg(
+      {action:'newRequest',name,cardNo,dept,size,date,reason:finalReason,bypass:(finalReason==='Damaged/Replacement'?true:bypass)},
+      res => {
+        btn.disabled=false;
+        if(res.status==='pending'){
+          setMsg('reqMsg', res.readyToIssue
+            ? '✓ Request logged. Stock available — click Issue in Pending List to complete.'
+            : '✓ Request logged. Added to pending list.', 'ok');
+
+          // Push directly into _pending cache — no server call needed
+          const today = new Date();
+          const newPendingRecord = {
+            rowIndex:      res.rowIndex || (Date.now()), // temp id until next reload
+            name:          name,
+            cardNo:        cardNo,
+            dept:          dept,
+            size:          size,
+            date:          date,
+            reason:        finalReason,
+            readyToIssue:  !!res.readyToIssue,
+            ineligible:    false,
+            lastIssueDate: _eligCache && _eligCache.cardNo.toLowerCase()===cardNo.toLowerCase()
+                             ? _eligCache.lastIssueDate : null
+          };
+          _pending.push(newPendingRecord);
+          updateStats();
+          if(_loaded.pending) filterPending();
+
+          clearNewForm(); markStale('dashboard');
+        } else if(res.status==='not_eligible'){
+          showIneligibleModal(res.lastIssueDate, res.rowIndex, name, cardNo, dept, size, finalReason);
+          btn.disabled=false;
+        } else if(res.status==='duplicate'){
+          document.getElementById('dupMsg').textContent=res.message;
+          document.getElementById('dupAlert').classList.add('show');
+          setMsg('reqMsg','Duplicate blocked by server.','err');
+        } else {
+          setMsg('reqMsg','Error: '+(res.message||'Unknown'),'err');
+        }
+      },
+      () => { btn.disabled=false; setMsg('reqMsg','✗ Connection error. Please try again.','err'); }
+    );
+  };
+
+  if(reason==='Damaged/Replacement' && !bypass){
+    showModal(
+      'This is marked as Damaged / Replacement. The 12-month eligibility check will still apply. Proceed?',
+      () => doSubmit()
+    );
+  } else {
+    doSubmit();
+  }
+}
+
+// ── INELIGIBILITY PROMPT MODAL ────────────────────────────────
+function showIneligibleModal(lastIssueDate, rowIndex, name, cardNo, dept, size, reason){
+  const m = document.getElementById('ineligibleModal');
+  document.getElementById('inelLastIssue').textContent = lastIssueDate ? fmtDate(lastIssueDate) : 'Unknown';
+  document.getElementById('inelName').textContent = name + ' (' + cardNo + ')';
+  m.classList.add('show');
+
+  // OK — keep as Not Eligible in pending list (row already saved as ST_INELIGIBLE)
+  document.getElementById('btnInelAdd').onclick = () => {
+    m.classList.remove('show');
+    setMsg('reqMsg','✓ Request saved as Not Eligible in the Pending List.','ok');
+    clearNewForm();
+    // Push directly into _pending as ineligible
+    _pending.push({
+      rowIndex:     rowIndex,
+      name:         name,
+      cardNo:       cardNo,
+      dept:         dept  || '',
+      size:         String(size || ''),
+      date:         new Date().toISOString().split('T')[0],
+      reason:       reason || 'New',
+      readyToIssue: false,
+      ineligible:   true,
+      lastIssueDate: lastIssueDate || null
+    });
+    updateStats();
+    if(_loaded.pending) filterPending();
+    markStale('dashboard');
+  };
+
+  // Cancel — delete the ineligible row from the sheet
+  document.getElementById('btnInelCancel').onclick = () => {
+    m.classList.remove('show');
+    postBg(
+      {action:'deleteRow', rowIndex},
+      () => { setMsg('reqMsg','Request removed.','inf'); },
+      () => { setMsg('reqMsg','Request removed (locally).','inf'); }
+    );
+    setMsg('reqMsg','Request cancelled and removed.','inf');
+  };
+}
+
+function clearNewForm(){
+  ['empName','cardNo','dept'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('shoeSize').value='';
+  document.getElementById('reason').value='New';
+  document.getElementById('reqDate').valueAsDate=new Date();
+  document.getElementById('bypassAlert').classList.remove('show');
+  document.getElementById('dupAlert').classList.remove('show');
+  document.getElementById('reason').classList.remove('sel-replace');
+  document.getElementById('bypassCheck').checked=false;
+  clearEligibility();
+}
+
+// ── TAB 2: PENDING ────────────────────────────────────────────
+let _pending=[];
+
+function loadPending(){
+  _pendingSort = null;
+  ['cardWait','cardReady','cardIneligible'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.outline=''; });
+  const sf=document.getElementById('pendingSizeFilter'); if(sf) sf.value='';
+  markStale('pending');
+  reloadTab('pending');
+}
+
+// ── ANIMATED COUNTER ─────────────────────────────────────────
+function animateCounter(id, target, duration=600){
+  const el = document.getElementById(id);
+  if(!el) return;
+  const start   = parseInt(el.textContent) || 0;
+  const range   = target - start;
+  const startTs = performance.now();
+  el.classList.remove('animating');
+  void el.offsetWidth; // reflow to restart animation
+  el.classList.add('animating');
+  const tick = (now) => {
+    const elapsed = Math.min(now - startTs, duration);
+    const ease    = 1 - Math.pow(1 - elapsed/duration, 3); // ease-out cubic
+    el.textContent = Math.round(start + range * ease);
+    if(elapsed < duration) requestAnimationFrame(tick);
+    else { el.textContent = target; el.classList.remove('animating'); }
+  };
+  requestAnimationFrame(tick);
+}
+
+function updateStats(){
+  const total      = _pending.length;
+  const wait       = _pending.filter(r=>!r.readyToIssue && !r.ineligible).length;
+  const ready      = _pending.filter(r=>r.readyToIssue).length;
+  const ineligible = _pending.filter(r=>r.ineligible).length;
+  animateCounter('statTotal',     total);
+  animateCounter('statWait',      wait);
+  animateCounter('statReady',     ready);
+  animateCounter('statIneligible',ineligible);
+}
+
+function filterPending(){
+  const q    = document.getElementById('pendingSearch').value.toLowerCase();
+  const size = document.getElementById('pendingSizeFilter')?.value || '';
+  let rows   = [..._pending];
+  // Apply size filter
+  if(size) rows = rows.filter(r => String(r.size).trim() === size);
+  // Apply text search
+  if(q) rows = rows.filter(r =>
+    r.name.toLowerCase().includes(q) ||
+    r.cardNo.toLowerCase().includes(q) ||
+    r.dept.toLowerCase().includes(q)
+  );
+  // Apply active sort (stat card click)
+  if(_pendingSort==='wait')       rows.sort((a,b)=>((a.readyToIssue||a.ineligible)?1:0)-((b.readyToIssue||b.ineligible)?1:0));
+  else if(_pendingSort==='ready') rows.sort((a,b)=>(b.readyToIssue?1:0)-(a.readyToIssue?1:0));
+  else if(_pendingSort==='ineligible') rows.sort((a,b)=>(b.ineligible?1:0)-(a.ineligible?1:0));
+  renderPending(rows);
+}
+
+let _pendingSort = null;
+function sortPendingBy(type){
+  _pendingSort = (_pendingSort === type) ? null : type;
+  document.getElementById('cardWait').style.outline       = (_pendingSort==='wait')       ? '2px solid var(--amber)' : '';
+  document.getElementById('cardReady').style.outline      = (_pendingSort==='ready')      ? '2px solid var(--green)' : '';
+  document.getElementById('cardIneligible').style.outline = (_pendingSort==='ineligible') ? '2px solid var(--red)'   : '';
+  filterPending();
+}
+
+function renderPending(data){
+  const el=document.getElementById('pendingList');
+  if(!data.length){
+    el.innerHTML='<div class="empty-state"><svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>No pending requests found.</div>';
+    return;
+  }
+  el.innerHTML=data.map(r=>`
+    <div class="pending-wrap" id="pwrap-${r.rowIndex}">
+      <!-- Red delete background revealed on swipe-left -->
+      <div class="pending-delete-bg" id="pdelbg-${r.rowIndex}">
+        <div class="del-icon">
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path stroke-linecap="round" stroke-linejoin="round" d="M19 6l-1 14H6L5 6m5 0V4h4v2"/></svg>
+          Delete
+        </div>
+      </div>
+      <div class="pending-item ${r.readyToIssue?'ready':''} ${r.ineligible?'ineligible-row':''}" id="prow-${r.rowIndex}"
+           data-rowindex="${r.rowIndex}" data-name="${r.name.replace(/"/g,'&quot;')}">
+        <div class="pi-left">
+          <div class="pi-name">${r.name}</div>
+          <div class="pi-meta">Card: <strong class="mono">${r.cardNo}</strong>&ensp;·&ensp;${r.dept}&ensp;·&ensp;Requested: <strong>${fmtDate(r.date)}</strong></div>
+          <div class="last-issued-chip">
+            <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 6v6l4 2"/></svg>
+            ${(r.lastIssueDate && r.lastIssueDate!=='null' && r.lastIssueDate!==null && r.lastIssueDate!=='')
+              ? 'Last issued: '+fmtDate(r.lastIssueDate)
+              : 'No prior issue'}
+          </div>
+        </div>
+        <div class="pi-right" style="flex-direction:column;align-items:flex-end;gap:8px">
+          <!-- Row 1: size, status chip, relocate -->
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+            <span class="size-badge" id="sizebadge-${r.rowIndex}" style="cursor:pointer" onclick="startEditSize(${r.rowIndex},'${r.size}')">UK ${r.size} ✎</span>
+            <span id="sizeedit-${r.rowIndex}" style="display:none;align-items:center;gap:4px">
+              <select class="form-select" id="sizesel-${r.rowIndex}" style="padding:4px 8px;font-size:12px;height:30px;width:80px">
+                ${['5','6','7','8','9','10','11','12'].map(s=>`<option value="${s}" ${r.size===s?'selected':''}>${'UK '+s}</option>`).join('')}
+              </select>
+              <button onclick="saveEditSize(${r.rowIndex})" style="padding:4px 10px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;height:30px">Save</button>
+              <button onclick="cancelEditSize(${r.rowIndex})" style="padding:4px 8px;background:var(--surface3);color:var(--muted);border:1px solid var(--border);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;height:30px">✕</button>
+            </span>
+            <span class="chip ${r.ineligible?'chip-rep':r.readyToIssue?'chip-ready':'chip-wait'}" id="statuschip-${r.rowIndex}">
+              ${r.ineligible?'✗ Not Eligible':r.readyToIssue?'✓ Ready to Issue':'Awaiting Stock'}
+            </span>
+            ${r.readyToIssue
+              ? `<button onclick="openRelocateModal(${r.rowIndex},'${encodeURIComponent(JSON.stringify(r))}')"
+                  style="padding:5px 11px;background:var(--amber-bg);color:var(--amber);border:1.5px solid #FDE68A;border-radius:var(--radius-xs);font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap"
+                  onmouseover="this.style.background='#FEF3C7'" onmouseout="this.style.background='var(--amber-bg)'">🔄 Relocate</button>`
+              : ''}
+          </div>
+          <!-- Row 2: Reason change — only for ineligible rows -->
+          ${r.ineligible ? `
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:11px;color:var(--muted);font-weight:600">Change Reason:</span>
+            <select id="reasonsel-${r.rowIndex}" onchange="changeReasonOnPending(${r.rowIndex},this.value)"
+              style="padding:3px 8px;font-size:11.5px;border:1.5px solid #FECACA;border-radius:6px;background:#FEF2F2;color:#991B1B;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;height:28px;font-weight:600">
+              <option value="New" ${r.reason==='New'?'selected':''}>New Issue</option>
+              <option value="Damaged/Replacement" ${r.reason==='Damaged/Replacement'?'selected':''}>Damaged / Replacement</option>
+            </select>
+          </div>` : ''}
+          <!-- Row 3: Issue button -->
+          <div>
+            ${r.readyToIssue
+              ? `<button class="btn-issue" id="ibtn-${r.rowIndex}" onclick="issueFromPending(${r.rowIndex},'${encodeURIComponent(JSON.stringify(r))}')">Issue</button>`
+              : r.ineligible
+                ? `<span style="display:inline-block;padding:5px 14px;background:#FEF2F2;color:#DC2626;border-radius:var(--radius-xs);font-size:12px;font-weight:600;border:1px solid #FECACA;cursor:default">Not Eligible</span>`
+                : `<span style="display:inline-block;padding:5px 14px;background:var(--surface3);color:var(--muted2);border-radius:var(--radius-xs);font-size:12px;font-weight:600;border:1px solid var(--border);cursor:default">Issue</span>`
+            }
+          </div>
+        </div>
+      </div>
+    </div>`).join('');
+  // Attach swipe listeners after rendering
+  _attachSwipeListeners();
+}
+
+// ── SWIPE-TO-DELETE (pending rows) ───────────────────────────
+function _attachSwipeListeners(){
+  document.querySelectorAll('#pendingList .pending-item').forEach(el => {
+    const rowIndex = parseInt(el.dataset.rowindex);
+    if(!rowIndex) return;
+    let startX=0, startY=0, curX=0, isDragging=false, isHoriz=false;
+    const THRESHOLD = 80; // px to trigger delete
+    const bg = document.getElementById('pdelbg-'+rowIndex);
+
+    const onStart = e => {
+      // Ignore if clicking on interactive elements
+      if(e.target.closest('button,select,input,a')) return;
+      startX = e.touches ? e.touches[0].clientX : e.clientX;
+      startY = e.touches ? e.touches[0].clientY : e.clientY;
+      isDragging = true; isHoriz = false; curX = 0;
+      el.classList.add('swiping');
+    };
+    const onMove = e => {
+      if(!isDragging) return;
+      const dx = (e.touches ? e.touches[0].clientX : e.clientX) - startX;
+      const dy = (e.touches ? e.touches[0].clientY : e.clientY) - startY;
+      // Lock to horizontal after initial movement direction is determined
+      if(!isHoriz && Math.abs(dy) > Math.abs(dx) + 5) { isDragging=false; el.classList.remove('swiping'); return; }
+      if(Math.abs(dx) > 8) isHoriz = true;
+      if(!isHoriz) return;
+      e.preventDefault();
+      curX = Math.min(0, dx); // only allow left swipe
+      const progress = Math.min(1, Math.abs(curX) / THRESHOLD);
+      el.style.transform = 'translateX('+curX+'px)';
+      if(bg){ bg.style.opacity = progress; }
+    };
+    const onEnd = () => {
+      if(!isDragging) return;
+      isDragging = false;
+      el.classList.remove('swiping');
+      if(Math.abs(curX) >= THRESHOLD){
+        // Trigger delete — show modal
+        el.style.transform = '';
+        if(bg) bg.style.opacity = '0';
+        const name = el.dataset.name || 'this entry';
+        showModal(
+          'Delete pending request for '+name+'?\n\nThis will permanently remove the entry.',
+          () => _deletePendingRow(rowIndex),
+          () => {} // cancel — already reset
+        );
+      } else {
+        // Snap back
+        el.style.transition = 'transform .25s cubic-bezier(.34,1.56,.64,1)';
+        el.style.transform = '';
+        if(bg) bg.style.opacity = '0';
+        setTimeout(()=>{ el.style.transition=''; }, 300);
+      }
+      curX = 0;
+    };
+
+    // Mouse events (desktop)
+    el.addEventListener('mousedown',  onStart);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup',   onEnd);
+    // Touch events (mobile)
+    el.addEventListener('touchstart', onStart, {passive:true});
+    el.addEventListener('touchmove',  onMove,  {passive:false});
+    el.addEventListener('touchend',   onEnd);
+  });
+}
+
+function _deletePendingRow(rowIndex){
+  const wrap = document.getElementById('pwrap-'+rowIndex);
+  const item = document.getElementById('prow-'+rowIndex);
+  // Animate row out
+  if(item){
+    item.classList.add('swipe-out');
+  }
+  // Fire delete request
+  postBg(
+    {action:'deleteRow', rowIndex},
+    res => {
+      if(res.status==='ok'){
+        setTimeout(()=>{
+          const stockMsg = res.reallocated
+            ? ' Stock for UK '+res.size+' reallocated to next waiting request.'
+            : res.stockRestored
+              ? ' Stock for UK '+res.size+' returned to inventory.'
+              : '';
+          _pending = _pending.filter(p=>p.rowIndex!==rowIndex);
+          // If reallocated, upgrade the oldest ST_NO_STOCK row for this size in local cache
+          if(res.reallocated && res.size){
+            const waiting = _pending
+              .filter(p=>!p.readyToIssue && !p.ineligible && String(p.size)===String(res.size))
+              .sort((a,b)=>new Date(a.date)-new Date(b.date));
+            if(waiting.length) waiting[0].readyToIssue = true;
+          }
+          updateStats();
+          filterPending();
+          setMsg('pendingMsg','✓ Entry deleted.'+stockMsg,'ok');
+          markStale('dashboard','inventory');
+        }, 280);
+      } else {
+        // Revert animation on error
+        if(item){ item.classList.remove('swipe-out'); }
+        setMsg('pendingMsg','Error deleting: '+(res.message||'Unknown'),'err');
+      }
+    },
+    () => {
+      if(item){ item.classList.remove('swipe-out'); }
+      setMsg('pendingMsg','✗ Connection error.','err');
+    }
+  );
+}
+function changeReasonOnPending(rowIndex, newReason){
+  postBg(
+    {action:'changeReasonOnPending', rowIndex, newReason},
+    res => {
+      if(res.status==='ok'){
+        const row = _pending.find(p=>p.rowIndex===rowIndex);
+        if(row){
+          row.reason = newReason;
+          if(res.newStatus){
+            row.readyToIssue = res.readyToIssue;
+            row.ineligible   = false;
+          }
+        }
+        updateStats();
+        filterPending();
+        if(res.readyToIssue !== undefined){
+          setMsg('pendingMsg',
+            newReason==='Damaged/Replacement'
+              ? '✓ Reason changed. Row re-evaluated — '+(res.readyToIssue?'stock available, Ready to Issue.':'no stock, Awaiting Stock.')
+              : '✓ Reason updated.',
+            'ok');
+        }
+      }
+    },
+    () => setMsg('pendingMsg','✗ Connection error.','err')
+  );
+}
+
+function issueFromPending(rowIndex,enc){
+  const r=JSON.parse(decodeURIComponent(enc));
+  // Use custom modal instead of confirm() — Google Sites blocks confirm()
+  showModal(
+    'Issue shoe to '+r.name+' (UK '+r.size+')?\nThis will mark the request as Issued.',
+    () => doIssue(rowIndex, r)
+  );
+}
+
+// ── EDIT SIZE IN PENDING ROW ──────────────────────────────────
+function startEditSize(rowIndex, currentSize){
+  document.getElementById('sizebadge-'+rowIndex).style.display='none';
+  const editor = document.getElementById('sizeedit-'+rowIndex);
+  editor.style.display='inline-flex';
+  document.getElementById('sizesel-'+rowIndex).value = currentSize;
+}
+function cancelEditSize(rowIndex){
+  document.getElementById('sizeedit-'+rowIndex).style.display='none';
+  document.getElementById('sizebadge-'+rowIndex).style.display='';
+}
+function saveEditSize(rowIndex){
+  const newSize = document.getElementById('sizesel-'+rowIndex).value;
+  const row     = _pending.find(p=>p.rowIndex===rowIndex);
+  if(!row) return;
+  if(newSize === row.size){ cancelEditSize(rowIndex); return; }
+
+  // Optimistically hide editor
+  document.getElementById('sizeedit-'+rowIndex).style.display='none';
+  const badge = document.getElementById('sizebadge-'+rowIndex);
+  badge.textContent = 'UK '+newSize+' ✎';
+  badge.style.display='';
+  badge.style.opacity='0.5';
+
+  postBg(
+    {action:'editPendingSize', rowIndex, newSize},
+    res=>{
+      badge.style.opacity='1';
+      if(res.status==='ok'){
+        // Update local data
+        row.size = res.newSize || newSize;
+        row.readyToIssue = res.readyToIssue;
+        // Update the badge and status chip
+        badge.textContent = 'UK '+row.size+' ✎';
+        badge.onclick = ()=>startEditSize(rowIndex, row.size);
+        const chip = document.getElementById('statuschip-'+rowIndex);
+        const ibtn = document.getElementById('ibtn-'+rowIndex);
+        const prow = document.getElementById('prow-'+rowIndex);
+        if(chip) chip.className = 'chip '+(row.readyToIssue?'chip-ready':'chip-wait');
+        if(chip) chip.textContent = row.readyToIssue ? '✓ Ready to Issue' : 'Awaiting Stock';
+        if(ibtn){
+          ibtn.removeAttribute('style');
+          if(!row.readyToIssue) ibtn.style.cssText='background:var(--muted2);opacity:.6';
+          // Re-bind with updated row data
+          ibtn.onclick = ()=>issueFromPending(rowIndex, encodeURIComponent(JSON.stringify(row)));
+        }
+        if(prow){ prow.className='pending-item '+(row.readyToIssue?'ready':''); }
+        // Also update the select options for next edit
+        const sel = document.getElementById('sizesel-'+rowIndex);
+        if(sel) Array.from(sel.options).forEach(o=>{ o.selected = o.value===row.size; });
+        updateStats();
+        setMsg('pendingMsg','✓ Size updated to UK '+row.size+(row.readyToIssue?' — stock available, marked Ready to Issue.':' — no stock, marked Awaiting Stock.'),'ok');
+        markStale('inventory');
+      } else {
+        setMsg('pendingMsg','Error updating size: '+(res.message||'Unknown'),'err');
+      }
+    },
+    ()=>{ badge.style.opacity='1'; setMsg('pendingMsg','✗ Connection error.','err'); }
+  );
+}
+
+function doIssue(rowIndex, r){
+  const btn = document.getElementById('ibtn-'+rowIndex);
+
+  // ── Step 1: Press — scale down, start fill ──
+  if(btn){
+    btn.disabled = true;
+    btn.textContent = 'Issuing…';
+    // Force reflow so transition fires from 0%
+    void btn.offsetWidth;
+    btn.classList.add('filling');
+  }
+
+  post({action:'issueFromPending',rowIndex,cardNo:r.cardNo,name:r.name,dept:r.dept,size:r.size,reason:r.reason})
+    .then(res=>{
+      if(res.status==='ok'){
+        // ── Step 2: Fill complete → checkmark pop ──
+        if(btn){
+          btn.classList.remove('filling');
+          btn.classList.add('issued');
+          btn.innerHTML = '<span class="issue-check">✓</span> Issued';
+        }
+        // ── Step 3: After 900ms — update both lists instantly ──
+        setTimeout(()=>{
+          // Remove from pending
+          _pending = _pending.filter(p=>p.rowIndex!==rowIndex);
+          updateStats();
+          filterPending();
+          setMsg('pendingMsg','✓ Issued to '+r.name+' (UK '+r.size+') on '+fmtDate(res.issueDate)+'.','ok');
+
+          // Push directly into _issued cache — no server call needed
+          const newIssuedRecord = {
+            rowIndex:  rowIndex,
+            name:      r.name,
+            cardNo:    r.cardNo,
+            dept:      r.dept,
+            size:      String(r.size),
+            reason:    r.reason || 'New',
+            reqDate:   r.date,
+            issueDate: res.issueDate
+          };
+          // Insert at front (latest first)
+          _issued.unshift(newIssuedRecord);
+          // If issued tab is already rendered, re-apply filters so it shows immediately
+          if(_loaded.issued){
+            _populateIssuedFilters(_issued);
+            applyIssuedFilters();
+          } else {
+            // Mark it ready so when user clicks issued tab it renders from cache
+            _loaded.issued = false;
+            _preloadDone = true;
+          }
+          _buildEmpLookup();
+          markStale('dashboard');
+        }, 900);
+      } else {
+        // Reset on error
+        if(btn){
+          btn.classList.remove('filling','issued');
+          btn.disabled = false;
+          btn.textContent = 'Issue';
+        }
+        setMsg('pendingMsg','Error: '+(res.message||'Unknown'),'err');
+      }
+    })
+    .catch(()=>{
+      if(btn){
+        btn.classList.remove('filling','issued');
+        btn.disabled = false;
+        btn.textContent = 'Issue';
+      }
+      setMsg('pendingMsg','✗ Connection error.','err');
+    });
+}
+
+// ── RELOCATE ALLOCATION ───────────────────────────────────────
+let _relocateFromRow = null;   // rowIndex of the ST_READY row being relocated
+let _relocateFromData = null;  // full row object
+let _relocateToRow = null;     // rowIndex of selected ST_NO_STOCK target
+
+function openRelocateModal(rowIndex, enc){
+  const r = JSON.parse(decodeURIComponent(enc));
+  _relocateFromRow  = rowIndex;
+  _relocateFromData = r;
+  _relocateToRow    = null;
+
+  // Find all pending (No Stock) rows with the same size — these are candidates
+  const candidates = _pending.filter(p =>
+    !p.readyToIssue &&
+    String(p.size).trim() === String(r.size).trim() &&
+    p.rowIndex !== rowIndex
+  );
+
+  document.getElementById('relocateSubtitle').textContent =
+    'From: ' + r.name + ' (UK ' + r.size + ')  →  Select new recipient';
+
+  const container = document.getElementById('relocateCandidates');
+  const msg       = document.getElementById('relocateMsg');
+  msg.style.display = 'none';
+
+  if(!candidates.length){
+    container.innerHTML =
+      '<div style="padding:24px 16px;text-align:center;font-family:\'Plus Jakarta Sans\',sans-serif;font-size:13px;color:#6b7280">' +
+      'No other employees are waiting for UK '+r.size+'. Nothing to relocate to.</div>';
+    document.getElementById('btnConfirmRelocate').disabled = true;
+    document.getElementById('btnConfirmRelocate').style.opacity = '.4';
+    document.getElementById('btnConfirmRelocate').style.cursor = 'not-allowed';
+  } else {
+    container.innerHTML = candidates.map((c,i) =>
+      '<div id="rcand-'+c.rowIndex+'" onclick="selectRelocateCandidate('+c.rowIndex+')" style="'+
+      'display:flex;align-items:center;justify-content:space-between;padding:12px 14px;'+
+      'border-bottom:1px solid #e2e5ef;cursor:pointer;transition:background .15s;'+
+      (i===0?'border-radius:8px 8px 0 0':i===candidates.length-1?'border-radius:0 0 8px 8px':'')+'">'+
+      '<div>'+
+      '<div style="font-family:\'Plus Jakarta Sans\',sans-serif;font-size:13.5px;font-weight:700;color:#111827">'+c.name+'</div>'+
+      '<div style="font-family:\'Plus Jakarta Sans\',sans-serif;font-size:11.5px;color:#6b7280;margin-top:3px">'+
+      'Card: '+c.cardNo+' &nbsp;·&nbsp; '+c.dept+' &nbsp;·&nbsp; Requested: '+fmtDate(c.date)+'</div>'+
+      '</div>'+
+      '<div style="width:20px;height:20px;border-radius:50%;border:2px solid #d1d5db;flex-shrink:0" id="rcand-dot-'+c.rowIndex+'"></div>'+
+      '</div>'
+    ).join('');
+    document.getElementById('btnConfirmRelocate').disabled = true;
+    document.getElementById('btnConfirmRelocate').style.opacity = '.4';
+    document.getElementById('btnConfirmRelocate').style.cursor = 'not-allowed';
+  }
+
+  document.getElementById('relocateModal').classList.add('show');
+}
+
+function selectRelocateCandidate(rowIndex){
+  // Deselect all
+  _pending.filter(p=>!p.readyToIssue).forEach(p=>{
+    const dot = document.getElementById('rcand-dot-'+p.rowIndex);
+    const row = document.getElementById('rcand-'+p.rowIndex);
+    if(dot){ dot.style.background=''; dot.style.borderColor='#d1d5db'; }
+    if(row){ row.style.background=''; }
+  });
+  // Select chosen
+  _relocateToRow = rowIndex;
+  const dot = document.getElementById('rcand-dot-'+rowIndex);
+  const row = document.getElementById('rcand-'+rowIndex);
+  if(dot){ dot.style.background='#d97706'; dot.style.borderColor='#d97706'; }
+  if(row){ row.style.background='#fffbeb'; }
+  // Enable confirm button
+  const btn = document.getElementById('btnConfirmRelocate');
+  btn.disabled = false;
+  btn.style.opacity = '1';
+  btn.style.cursor  = 'pointer';
+}
+
+function closeRelocateModal(){
+  document.getElementById('relocateModal').classList.remove('show');
+  _relocateFromRow = _relocateFromData = _relocateToRow = null;
+}
+
+function confirmRelocate(){
+  if(!_relocateFromRow || !_relocateToRow) return;
+  const toRow = _pending.find(p => p.rowIndex === _relocateToRow);
+  if(!toRow) return;
+
+  const btn = document.getElementById('btnConfirmRelocate');
+  btn.disabled = true;
+  btn.textContent = 'Relocating…';
+
+  const msg = document.getElementById('relocateMsg');
+  msg.style.display   = 'block';
+  msg.style.background = '#EEF3FA';
+  msg.style.border     = '1px solid #BFDBFE';
+  msg.style.color      = '#1E40AF';
+  msg.textContent      = 'Saving…';
+
+  postBg(
+    {
+      action:       'relocateShoe',
+      fromRowIndex: _relocateFromRow,
+      toRowIndex:   _relocateToRow
+    },
+    res => {
+      if(res.status === 'ok'){
+        // Update local _pending array
+        const fromRow = _pending.find(p=>p.rowIndex===_relocateFromRow);
+        if(fromRow){ fromRow.readyToIssue = false; }
+        if(toRow)  { toRow.readyToIssue   = true;  }
+        closeRelocateModal();
+        // Re-render
+        updateStats();
+        filterPending();
+        setMsg('pendingMsg',
+          '✓ Allocation relocated from '+_relocateFromData.name+' → '+toRow.name+' (UK '+toRow.size+').',
+          'ok');
+        markStale('dashboard');
+      } else {
+        msg.style.background = '#FEF2F2';
+        msg.style.border     = '1px solid #FECACA';
+        msg.style.color      = '#991B1B';
+        msg.textContent      = 'Error: '+(res.message||'Unknown');
+        btn.disabled   = false;
+        btn.textContent = 'Relocate';
+        btn.style.opacity = '1';
+        btn.style.cursor  = 'pointer';
+      }
+    },
+    () => {
+      msg.style.background = '#FEF2F2';
+      msg.style.border     = '1px solid #FECACA';
+      msg.style.color      = '#991B1B';
+      msg.textContent      = '✗ Connection error.';
+      btn.disabled = false;
+      btn.textContent = 'Relocate';
+      btn.style.opacity = '1';
+      btn.style.cursor  = 'pointer';
+    }
+  );
+}
+
+function sendRequirementList(){
+  if(!_pending.length){ showAlert('No pending requests to send.'); return; }
+  showLoader('Sending email…');
+  postBg(
+    {action:'sendRequirementList'},
+    res=>{ hideLoader(); if(res.status==='ok') setMsg('pendingMsg','✓ Requirement list sent to manager.','ok'); else setMsg('pendingMsg','Error: '+res.message,'err'); },
+    ()=>{ hideLoader(); setMsg('pendingMsg','✗ Connection error.','err'); }
+  );
+}
+
+function sendReadyForIssue(){
+  if(!_pending.filter(r=>r.readyToIssue).length){ showAlert('No items are Ready to Issue. Add inventory first.'); return; }
+  showLoader('Sending email…');
+  postBg(
+    {action:'sendReadyForIssue'},
+    res=>{ hideLoader(); if(res.status==='ok') setMsg('pendingMsg','✓ Ready-for-issue list sent to manager.','ok'); else setMsg('pendingMsg','Error: '+res.message,'err'); },
+    ()=>{ hideLoader(); setMsg('pendingMsg','✗ Connection error.','err'); }
+  );
+}
+
+// ── TAB 3: ISSUED ─────────────────────────────────────────────
+let _issued=[];
+let _issuedFiltered=[];
+
+function loadIssued(){ markStale('issued'); reloadTab('issued'); }
+
+function renderIssued(data){
+  _issued = data;
+  _populateIssuedFilters(data);
+  applyIssuedFilters();
+}
+
+// Populate dept and year dropdowns from data
+function _populateIssuedFilters(data){
+  const deptSel = document.getElementById('filterDept');
+  const yearSel = document.getElementById('filterYear');
+  const curDept = deptSel.value;
+  const curYear = yearSel.value;
+
+  const depts = [...new Set(data.map(r=>r.dept).filter(Boolean))].sort();
+  const years = [...new Set(data.map(r=>{
+    const d = _parseIssuedDate(r.issueDate);
+    return d ? d.getFullYear() : null;
+  }).filter(Boolean))].sort((a,b)=>b-a);
+
+  deptSel.innerHTML = '<option value="">All Departments</option>' +
+    depts.map(d=>`<option value="${d}">${d}</option>`).join('');
+  yearSel.innerHTML = '<option value="">All Years</option>' +
+    years.map(y=>`<option value="${y}">${y}</option>`).join('');
+
+  // Restore previous selection if still valid
+  if(curDept) deptSel.value = curDept;
+  if(curYear) yearSel.value = curYear;
+}
+
+function _parseIssuedDate(str){
+  if(!str || str==='—') return null;
+  const p = String(str).split('/');
+  if(p.length===3) return new Date(p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0'));
+  const d = new Date(str);
+  return isNaN(d) ? null : d;
+}
+
+function applyIssuedFilters(){
+  const q     = (document.getElementById('issuedSearch').value||'').toLowerCase();
+  const dept  = document.getElementById('filterDept').value;
+  const year  = document.getElementById('filterYear').value;
+  const month = document.getElementById('filterMonth').value;
+
+  _issuedFiltered = _issued.filter(r => {
+    if(dept  && r.dept !== dept) return false;
+    if(year || month){
+      const d = _parseIssuedDate(r.issueDate);
+      if(!d) return false;
+      if(year  && d.getFullYear() !== parseInt(year))  return false;
+      if(month && (d.getMonth()+1) !== parseInt(month)) return false;
+    }
+    if(q){
+      const hay = (r.name+' '+r.cardNo+' '+r.dept+' '+r.size+' '+(r.reason||'')).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  _renderIssuedRows(_issuedFiltered);
+  const cnt = document.getElementById('issuedCount');
+  if(cnt){
+    const total = _issued.length;
+    const shown = _issuedFiltered.length;
+    cnt.textContent = shown === total
+      ? 'Showing all '+total+' records'
+      : 'Showing '+shown+' of '+total+' records (filtered)';
+  }
+}
+
+function clearIssuedFilters(){
+  document.getElementById('issuedSearch').value='';
+  document.getElementById('filterDept').value='';
+  document.getElementById('filterYear').value='';
+  document.getElementById('filterMonth').value='';
+  applyIssuedFilters();
+}
+
+function _renderIssuedRows(data){
+  const t=document.getElementById('issuedBody');
+  if(!data.length){ t.innerHTML='<tr><td colspan="9"><div class="empty-state">No records match the selected filters.</div></td></tr>'; return; }
+  const now = new Date();
+  const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+  t.innerHTML=data.map((r,i)=>{
+    const sz      = String(r.size||'').trim();
+    const issueD  = _parseIssuedDate(r.issueDate);
+    // canUndo only requires a valid issue date within 7 days — rowIndex is optional
+    const canUndo = issueD && (now - issueD) <= SEVEN_DAYS;
+    const daysLeft = canUndo ? Math.max(0, 7 - Math.floor((now - issueD)/(1000*60*60*24))) : 0;
+    const safeN   = (r.name||'').replace(/'/g,"\\'");
+    const undoCell = canUndo
+      ? `<button onclick="undoIssue(${r.rowIndex||0},'${r.cardNo}','${r.issueDate}','${safeN}','${sz}')"
+           style="padding:4px 10px;background:#FEF2F2;color:#DC2626;border:1.5px solid #FECACA;border-radius:6px;font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s"
+           onmouseover="this.style.background='#FEE2E2'" onmouseout="this.style.background='#FEF2F2'"
+           title="Undo available for ${daysLeft} more day(s)">↩ Undo <span style="font-weight:400;opacity:.7">${daysLeft}d</span></button>`
+      : `<span style="font-size:10px;color:var(--muted2)">—</span>`;
+    return `<tr id="issued-row-${r.rowIndex||i}">
+    <td class="mono" style="color:var(--muted2)">${i+1}</td>
+    <td style="font-weight:700">${r.name}</td>
+    <td class="mono">${r.cardNo}</td>
+    <td style="color:var(--muted)">${r.dept}</td>
+    <td style="white-space:nowrap"><span class="chip chip-blue" style="font-size:11px;font-family:'JetBrains Mono',monospace;white-space:nowrap">UK ${sz}</span></td>
+    <td><span class="chip ${r.reason==='Damaged/Replacement'?'chip-rep':'chip-new'}" style="font-size:10px;white-space:nowrap">${r.reason||'New'}</span></td>
+    <td style="font-size:12px;color:var(--muted);white-space:nowrap">${fmtDate(r.reqDate)}</td>
+    <td style="font-size:12px;font-weight:700;color:var(--green);white-space:nowrap">${fmtDate(r.issueDate)}</td>
+    <td style="text-align:center">${undoCell}</td>
+  </tr>`;
+  }).join('');
+}
+
+// Keep old filterIssued as alias
+function filterIssued(){ applyIssuedFilters(); }
+
+// ── UNDO ISSUE ────────────────────────────────────────────────
+function undoIssue(rowIndex, cardNo, issueDate, name, size){
+  showModal(
+    'Undo issuance for '+name+' (UK '+size+')?\n\nThe record will return to Pending and 1 pair will be added back to inventory.',
+    () => {
+      showLoader('Undoing issue…');
+      postBg(
+        {action:'undoIssue', rowIndex, cardNo, issueDate},
+        res => {
+          hideLoader();
+          if(res.status==='ok'){
+            _issued = _issued.filter(r=>!(r.cardNo===cardNo && r.issueDate===issueDate));
+            _populateIssuedFilters(_issued);
+            applyIssuedFilters();
+            setMsg('issuedMsg','✓ Issue undone for '+name+'. Row returned to Pending List.','ok');
+            markStale('pending','inventory','dashboard');
+          } else {
+            setMsg('issuedMsg','Error: '+(res.message||'Unknown'),'err');
+          }
+        },
+        ()=>{ hideLoader(); setMsg('issuedMsg','✗ Connection error.','err'); }
+      );
+    }
+  );
+}
+
+// ── EXPORT ────────────────────────────────────────────────────
+function exportIssued(type){
+  const data = _issuedFiltered.length ? _issuedFiltered : _issued;
+  if(!data.length){ showAlert('No records to export.'); return; }
+
+  // Build filter description for title
+  const dept  = document.getElementById('filterDept').value;
+  const year  = document.getElementById('filterYear').value;
+  const month = document.getElementById('filterMonth').value;
+  const MONTH_NAMES=['','January','February','March','April','May','June','July','August','September','October','November','December'];
+  const filterDesc = [dept, month?MONTH_NAMES[parseInt(month)]:'', year].filter(Boolean).join(' · ') || 'All Records';
+  const title = 'Safety Shoe Issuance — ' + filterDesc;
+
+  if(type==='excel') _exportExcel(data, title);
+  else               _exportPDF(data, title, filterDesc);
+}
+
+function _exportExcel(data, title){
+  // Build CSV content
+  const headers = ['Sl No.','Employee Name','Card No.','Department','Size (UK)','Reason','Request Date','Issue Date'];
+  const rows = data.map((r,i)=>[
+    i+1, r.name, r.cardNo, r.dept, 'UK '+String(r.size||'').trim(), r.reason||'New', fmtDate(r.reqDate), fmtDate(r.issueDate)
+  ]);
+
+  // CSV with BOM for Excel UTF-8 compatibility
+  const csvContent = '\uFEFF' + [headers, ...rows]
+    .map(row => row.map(cell => '"'+String(cell).replace(/"/g,'""')+'"').join(','))
+    .join('\r\n');
+
+  const blob = new Blob([csvContent], {type:'text/csv;charset=utf-8;'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = title.replace(/[^a-zA-Z0-9 ·]/g,'') + '.csv';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+
+function _exportPDF(data, title, filterDesc){
+  // Build a clean print-ready HTML page and open it for printing
+  const rows = data.map((r,i)=>`
+    <tr style="background:${i%2===0?'#fff':'#f7f8fc'}">
+      <td style="text-align:center;color:#6b7280">${i+1}</td>
+      <td style="font-weight:600">${r.name}</td>
+      <td style="font-family:monospace;font-size:11px">${r.cardNo}</td>
+      <td>${r.dept}</td>
+      <td style="text-align:center;font-weight:700;color:#1d4ed8">UK ${String(r.size||'').trim()}</td>
+      <td style="text-align:center">${r.reason||'New'}</td>
+      <td style="color:#6b7280">${fmtDate(r.reqDate)}</td>
+      <td style="font-weight:700;color:#059669">${fmtDate(r.issueDate)}</td>
+    </tr>`).join('');
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+  <title>${title}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;font-size:12px;color:#111;padding:20px}
+    .header{margin-bottom:16px}
+    .org{font-size:13px;font-weight:700;color:#1d4ed8}
+    h2{font-size:16px;font-weight:700;margin:4px 0 2px}
+    .meta{font-size:11px;color:#6b7280;margin-bottom:12px}
+    table{width:100%;border-collapse:collapse;font-size:11px}
+    thead tr{background:#1d4ed8;color:#fff}
+    th{padding:8px 10px;text-align:left;font-weight:700;white-space:nowrap}
+    td{padding:7px 10px;border-bottom:1px solid #e2e5ef}
+    .footer{margin-top:16px;font-size:10px;color:#9ca3af;text-align:right}
+    @media print{body{padding:10px}.no-print{display:none}}
+  </style></head><body>
+  <div class="header">
+    <div class="org">Safety &amp; Environment Department &nbsp;|&nbsp; HLL Lifecare Limited, Peroorkada Factory</div>
+    <h2>Safety Shoe Issuance Records</h2>
+    <div class="meta">Filter: ${filterDesc} &nbsp;·&nbsp; Total Records: ${data.length} &nbsp;·&nbsp; Generated: ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</div>
+  </div>
+  <table>
+    <thead><tr><th>#</th><th>Employee Name</th><th>Card No.</th><th>Department</th><th>Size</th><th>Reason</th><th>Request Date</th><th>Issue Date</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="footer">Safety Shoe Distribution Portal &nbsp;·&nbsp; Safety &amp; Environment Department</div>
+  <div class="no-print" style="margin-top:20px;text-align:center">
+    <button onclick="window.print()" style="padding:10px 28px;background:#1d4ed8;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">🖨 Print / Save as PDF</button>
+    <button onclick="window.close()" style="padding:10px 20px;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;margin-left:8px">Close</button>
+  </div>
+  </body></html>`;
+
+  const w = window.open('','_blank','width=900,height=700');
+  if(w){ w.document.write(html); w.document.close(); }
+  else { showAlert('Popup blocked. Please allow popups for this site to export PDF.'); }
+}
+
+// ── TAB 4: INVENTORY ──────────────────────────────────────────
+let _invData = [];
+let _showBalance = false;
+
+function toggleInvForm(){
+  const body = document.getElementById('invFormBody');
+  const hint = document.getElementById('invFormHint');
+  const open = body.style.display === 'none';
+  body.style.display = open ? 'block' : 'none';
+  hint.textContent = open ? 'Click to collapse ▾' : 'Click to expand ▸';
+  if(open) buildInvRows();
+}
+
+const INV_ROW_COUNT = 5;
+const SIZE_OPTIONS = [5,6,7,8,9,10,11,12];
+
+function buildInvRows(){
+  const today = new Date().toISOString().split('T')[0];
+  const container = document.getElementById('invRows');
+  container.innerHTML = Array.from({length: INV_ROW_COUNT}, (_,i) => `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;align-items:center" id="inv-row-${i}">
+      <input class="form-input" type="date" id="invDate_${i}" value="${today}" style="padding:8px 10px"/>
+      <select class="form-select" id="invSize_${i}" style="padding:8px 10px">
+        <option value="">— Size —</option>
+        ${SIZE_OPTIONS.map(s=>`<option value="${s}">${s}</option>`).join('')}
+      </select>
+      <input class="form-input" type="number" id="invQty_${i}" placeholder="Qty" min="1" style="padding:8px 10px"/>
+    </div>`).join('');
+}
+
+function clearInvRows(){
+  buildInvRows();
+  const m = document.getElementById('invMsg');
+  m.className='msg'; m.textContent='';
+}
+
+function addInventory(){
+  // Collect all filled rows — skip any row where size or qty is empty
+  const rows = [];
+  for(let i=0; i<INV_ROW_COUNT; i++){
+    const date = document.getElementById('invDate_'+i)?.value;
+    const size = document.getElementById('invSize_'+i)?.value;
+    const qty  = parseInt(document.getElementById('invQty_'+i)?.value);
+    if(size && qty >= 1) rows.push({date: date || new Date().toISOString().split('T')[0], size, qty});
+  }
+  if(!rows.length){ setMsg('invMsg','Please fill in at least one row with a size and quantity.','err'); return; }
+
+  const btn = document.getElementById('btnAddInv');
+  btn.disabled = true;
+  setMsg('invMsg', 'Adding '+rows.length+' stock entry(ies)…','inf');
+
+  // Fire all rows sequentially — each as a separate addInventory call
+  let done=0, totalAllocated=0, errors=[];
+
+  const fireNext = (idx) => {
+    if(idx >= rows.length){
+      // All done
+      btn.disabled = false;
+      if(errors.length){
+        setMsg('invMsg','✗ Some entries failed: '+errors.join('; '),'err');
+      } else {
+        const allocMsg = totalAllocated > 0
+          ? ' '+totalAllocated+' pending request(s) marked Ready to Issue.' : '';
+        setMsg('invMsg','✓ '+rows.length+' stock entry(ies) added successfully.'+allocMsg,'ok');
+        // Collapse form and reset
+        document.getElementById('invFormBody').style.display='none';
+        document.getElementById('invFormHint').textContent='Click to expand ▸';
+        buildInvRows();
+        loadInventory();
+        markStale('pending');
+      }
+      return;
+    }
+    const r = rows[idx];
+    postBg(
+      {action:'addInventory', date:r.date, size:r.size, qty:r.qty},
+      res=>{
+        if(res.status==='ok') totalAllocated += (res.allocated||0);
+        else errors.push('Size '+r.size+': '+(res.message||'error'));
+        fireNext(idx+1);
+      },
+      ()=>{ errors.push('Size '+r.size+': connection error'); fireNext(idx+1); }
+    );
+  };
+
+  fireNext(0);
+}
+
+function toggleStockView(){
+  _showBalance = !_showBalance;
+  const toggle = document.getElementById('stockToggle');
+  const track  = document.getElementById('stockToggleTrack');
+  const thumb  = document.getElementById('stockToggleThumb');
+  const label  = document.getElementById('stockToggleLabel');
+  const desc   = document.getElementById('stockViewDesc');
+  toggle.checked = _showBalance;
+  track.style.background = _showBalance ? 'var(--primary)' : '#D1D5DB';
+  thumb.style.transform  = _showBalance ? 'translateX(18px)' : 'translateX(0)';
+  label.textContent = _showBalance ? 'Balance Stock' : 'Total Stock';
+  desc.textContent  = _showBalance
+    ? 'Primary number shows Balance (free stock). Allocated and Balance always visible below.'
+    : 'Primary number shows Total stock. Allocated and Balance always visible below.';
+  renderInvCards(_invData);
+}
+
+function loadInventory(){ markStale('inventory'); reloadTab('inventory'); }
+
+function renderInvCards(data){
+  const el = document.getElementById('invCards');
+  if(!data.length){ el.innerHTML='<div class="empty-state">No inventory data.</div>'; return; }
+  el.innerHTML = data.map(row=>{
+    const total    = row.qty        || 0;
+    const alloc    = row.readyCount || 0;
+    const balance  = row.balanceQty || 0;
+
+    // Card status is based on balance (free stock)
+    const cls = balance===0 ? 'zero' : balance<=3 ? 'low' : 'ok';
+    const lbl = balance===0 ? 'Out of Stock' : balance<=3 ? 'Low Stock' : 'Available';
+
+    // Primary number shown large is whichever view the toggle is set to
+    const primaryQty   = _showBalance ? balance : total;
+    const primaryLabel = _showBalance ? 'Balance' : 'Total';
+
+    return '<div class="inv-stock-card '+cls+'" style="padding:14px 12px;text-align:center">'
+
+      // UK label
+      +'<div class="isc-size">UK</div>'
+
+      // Size number
+      +'<div class="isc-num">'+row.size+'</div>'
+
+      // ── Partition line below size ──
+      +'<div style="border-top:1.5px solid currentColor;opacity:.2;margin:6px 0 8px"></div>'
+
+      // Primary big number
+      +'<div style="font-size:26px;font-weight:800;color:inherit;line-height:1;letter-spacing:-.03em">'+primaryQty+'</div>'
+      +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:inherit;opacity:.7;margin-top:2px;margin-bottom:8px">'+primaryLabel+'</div>'
+
+      // ── Allocated & Balance row ──
+      +'<div style="display:flex;justify-content:space-between;gap:4px;border-top:1px solid rgba(0,0,0,.08);padding-top:7px;margin-top:2px">'
+        +'<div style="flex:1;text-align:center">'
+          +'<div style="font-size:13px;font-weight:800;color:var(--amber)">'+alloc+'</div>'
+          +'<div style="font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--amber);opacity:.85;line-height:1.2">Allocated</div>'
+        +'</div>'
+        +'<div style="width:1px;background:rgba(0,0,0,.1)"></div>'
+        +'<div style="flex:1;text-align:center">'
+          +'<div style="font-size:13px;font-weight:800;color:inherit">'+balance+'</div>'
+          +'<div style="font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:inherit;opacity:.7;line-height:1.2">Balance</div>'
+        +'</div>'
+      +'</div>'
+
+      +'<div class="isc-lbl" style="margin-top:6px">'+lbl+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+// ── TAB 5: PURCHASE ORDERS ────────────────────────────────────
+let _pos=[];
+
+function togglePOForm(){
+  const body = document.getElementById('poFormBody');
+  const hint = document.getElementById('poFormToggleHint');
+  const open = body.style.display === 'none';
+  body.style.display = open ? 'block' : 'none';
+  hint.textContent = open ? 'Click to collapse ▾' : 'Click to expand ▸';
+}
+
+function loadPOs(){ markStale('po'); reloadTab('po'); }
+function filterPOs(){
+  const q=document.getElementById('poSearch').value.toLowerCase();
+  renderPOs(_pos.filter(p=>p.poNumber.toLowerCase().includes(q)||p.vendor.toLowerCase().includes(q)));
+}
+function renderPOs(data){
+  const tbody=document.getElementById('poBody');
+  if(!data.length){ tbody.innerHTML='<tr><td colspan="8"><div class="empty-state">No purchase orders yet.</div></td></tr>'; return; }
+  tbody.innerHTML=data.map(po=>{
+    const ordered=Number(po.orderedQty)||0, received=Number(po.receivedQty)||0;
+    const remaining=Math.max(0,ordered-received);
+    const pct=ordered?Math.round(received/ordered*100):0;
+    const isClosed=po.status==='Closed';
+    const barColor=isClosed?'var(--green)':pct>=50?'var(--amber)':'var(--primary)';
+    const statusChip=isClosed
+      ? '<span class="chip chip-new" style="font-size:10px">Closed</span>'
+      : received>0
+        ? '<span class="chip chip-amber" style="font-size:10px">Partial</span>'
+        : '<span class="chip chip-blue" style="font-size:10px">Open</span>';
+    return '<tr id="po-row-'+po.rowIndex+'">'
+      +'<td style="font-weight:700;font-family:JetBrains Mono,monospace;font-size:12px">'+po.poNumber+'</td>'
+      +'<td>'+po.vendor+'</td>'
+      +'<td style="font-weight:700;color:var(--primary)">'+ordered+'</td>'
+      +'<td style="font-weight:700;color:var(--green)">'+received+'</td>'
+      +'<td><div class="po-progress-wrap"><div class="po-progress-bar"><div class="po-progress-fill" style="width:'+pct+'%;background:'+barColor+'"></div></div><span class="po-pct" style="color:'+barColor+'">'+remaining+'</span></div></td>'
+      +'<td style="font-size:12px;color:var(--muted)">'+fmtDate(po.poDate)+'</td>'
+      +'<td>'+statusChip+'</td>'
+      +'<td>'
+        +(!isClosed
+          ? '<button class="btn btn-sm btn-red" onclick="closePO('+po.rowIndex+',\''+po.poNumber+'\')"><svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>Close PO</button>'
+          : '<span style="font-size:11px;color:var(--muted2)">Completed</span>')
+      +'</td></tr>';
+  }).join('');
+}
+function addPO(){
+  const poNumber=document.getElementById('poNumber').value.trim();
+  const vendor  =document.getElementById('poVendor').value.trim();
+  const qty     =parseInt(document.getElementById('poQty').value);
+  const date    =document.getElementById('poDate').value;
+  if(!poNumber||!vendor||!qty||qty<1||!date){ setMsg('poMsg','Please fill in all fields.','err'); return; }
+  if(_pos.find(p=>p.poNumber.trim().toLowerCase()===poNumber.toLowerCase())){ setMsg('poMsg','✗ PO Number already exists.','err'); return; }
+  const btn=document.getElementById('btnAddPO');
+  btn.disabled=true;
+  setMsg('poMsg','Adding purchase order…','inf');
+  postBg(
+    {action:'addPO',poNumber,vendor,qty,date},
+    res=>{
+      btn.disabled=false;
+      if(res.status==='ok'){
+        setMsg('poMsg','✓ Purchase Order added successfully.','ok');
+        clearPOForm();
+        // Collapse the form after successful save
+        document.getElementById('poFormBody').style.display='none';
+        document.getElementById('poFormToggleHint').textContent='Click to expand ▸';
+        reloadTab('po');
+      }
+      else { setMsg('poMsg','Error: '+(res.message||'Unknown'),'err'); }
+    },
+    ()=>{ btn.disabled=false; setMsg('poMsg','✗ Connection error.','err'); }
+  );
+}
+function closePO(rowIndex,poNumber){
+  showModal(
+    'Close Purchase Order '+poNumber+'? This marks it as fully received and cannot be undone.',
+    ()=>{
+      showLoader('Closing PO…');
+      postBg(
+        {action:'closePO',rowIndex,poNumber},
+        res=>{ hideLoader(); if(res.status==='ok'){ setMsg('poMsg','✓ PO '+poNumber+' marked as Closed.','ok'); reloadTab('po'); } else setMsg('poMsg','Error: '+(res.message||'Unknown'),'err'); },
+        ()=>{ hideLoader(); setMsg('poMsg','✗ Connection error.','err'); }
+      );
+    }
+  );
+}
+function clearPOForm(){
+  ['poNumber','poVendor'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('poQty').value='';
+  document.getElementById('poDate').valueAsDate=new Date();
+}
+
+// ── TAB 6: DASHBOARD ──────────────────────────────────────────
+const DEPT_COLORS=['#1D4ED8','#059669','#D97706','#DC2626','#7C3AED','#0891B2','#BE185D','#65A30D','#9333EA','#0F766E'];
+function loadDashboard(force){
+  markStale('dashboard');
+  reloadTab('dashboard');
+}
+function buildDashboard(pd,id){
+  const allDepts=new Set([...pd.map(r=>r.dept),...id.map(r=>r.dept)]);
+  animateCounter('dkTotal',  pd.length+id.length);
+  animateCounter('dkIssued', id.length);
+  animateCounter('dkPending',pd.length);
+  animateCounter('dkDepts',  allDepts.size);
+  const deptMap={};
+  const ensureDept=d=>{if(!deptMap[d])deptMap[d]={dept:d,issued:0,pending:0,ready:0,waiting:0,newIssue:0,replacement:0};};
+  id.forEach(r=>{ensureDept(r.dept);deptMap[r.dept].issued++;if((r.reason||'New')==='Damaged/Replacement')deptMap[r.dept].replacement++;else deptMap[r.dept].newIssue++;});
+  pd.forEach(r=>{ensureDept(r.dept);deptMap[r.dept].pending++;if(r.readyToIssue)deptMap[r.dept].ready++;else deptMap[r.dept].waiting++;if((r.reason||'New')==='Damaged/Replacement')deptMap[r.dept].replacement++;else deptMap[r.dept].newIssue++;});
+  const depts=Object.values(deptMap).sort((a,b)=>(b.issued+b.pending)-(a.issued+a.pending));
+  renderBarChart('deptPendingChart',depts,d=>d.pending,d=>d.dept,'#D97706','#FFFBEB');
+  renderBarChart('deptIssuedChart',depts,d=>d.issued,d=>d.dept,'#059669','#ECFDF5');
+  renderStackedChart('stackedChart',depts);
+  const tNew=id.filter(r=>(r.reason||'New')!=='Damaged/Replacement').length+pd.filter(r=>(r.reason||'New')!=='Damaged/Replacement').length;
+  const tRepl=id.filter(r=>r.reason==='Damaged/Replacement').length+pd.filter(r=>r.reason==='Damaged/Replacement').length;
+  renderDonut('reasonDonut',[{label:'New Issue',val:tNew,color:'#1D4ED8'},{label:'Replacement',val:tRepl,color:'#DC2626'}]);
+  renderDeptTable(depts);
+  renderSizeChart('sizeIssuedChart',  id, '#0891B2', '#ECFEFF');
+  renderSizeChart('sizePendingChart', pd, '#D97706', '#FFFBEB');
+}
+function renderBarChart(cid,depts,valFn,lFn,fill,track){
+  const el=document.getElementById(cid),vd=depts.filter(d=>valFn(d)>0);
+  if(!vd.length){el.innerHTML='<div class="empty-state">No data.</div>';return;}
+  const max=Math.max(...vd.map(valFn),1);
+  el.innerHTML=vd.map(d=>{const pct=Math.round((valFn(d)/max)*100);return'<div class="bar-row"><div class="bar-dept" title="'+lFn(d)+'">'+lFn(d)+'</div><div class="bar-track" style="background:'+track+'"><div class="bar-fill" style="width:'+pct+'%;background:'+fill+'">'+(valFn(d)>2?valFn(d):'')+'</div></div><div class="bar-count">'+valFn(d)+'</div></div>';}).join('');
+}
+function renderStackedChart(cid,depts){
+  const el=document.getElementById(cid),hd=depts.filter(d=>d.issued+d.pending>0);
+  if(!hd.length){el.innerHTML='<div class="empty-state">No data.</div>';return;}
+  const max=Math.max(...hd.map(d=>d.issued+d.pending),1);
+  el.innerHTML='<div class="bar-chart" style="margin-top:4px">'+hd.map(d=>{const t=d.issued+d.pending,ip=Math.round((d.issued/max)*100),pp=Math.round((d.pending/max)*100);return'<div class="sbar-row"><div class="sbar-dept" title="'+d.dept+'">'+d.dept+'</div><div class="sbar-track"><div class="sbar-seg" style="width:'+ip+'%;background:#059669">'+(d.issued>1?d.issued:'')+'</div><div class="sbar-seg" style="width:'+pp+'%;background:#D97706">'+(d.pending>1?d.pending:'')+'</div></div><div class="bar-count" style="font-size:11px">'+t+'</div></div>';}).join('')+'</div><div class="sbar-legend"><div class="sbar-leg-item"><div class="sbar-leg-dot" style="background:#059669"></div>Issued</div><div class="sbar-leg-item"><div class="sbar-leg-dot" style="background:#D97706"></div>Pending</div></div>';
+}
+function renderDonut(cid,segs){
+  const el=document.getElementById(cid),total=segs.reduce((a,s)=>a+s.val,0);
+  if(!total){el.innerHTML='<div class="empty-state">No data.</div>';return;}
+  const cx=70,cy=70,r=54,sw=18,circ=2*Math.PI*r;let off=0;
+  const arcs=segs.map(s=>{const dash=circ*(s.val/total);const a='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+s.color+'" stroke-width="'+sw+'" stroke-dasharray="'+dash+' '+circ+'" stroke-dashoffset="'+-off+'" transform="rotate(-90 '+cx+' '+cy+')" opacity=".9"/>';off+=dash;return a;}).join('');
+  const leg=segs.map(s=>{const pct=Math.round(s.val/total*100);return'<div class="donut-leg-item"><div class="donut-leg-left"><div class="donut-leg-dot" style="background:'+s.color+'"></div><div class="donut-leg-name">'+s.label+'</div></div><div style="display:flex;align-items:center;gap:8px"><div class="donut-leg-val">'+s.val+'</div><div class="donut-leg-pct">'+pct+'%</div></div></div>';}).join('');
+  el.innerHTML='<div class="donut-wrap"><svg class="donut-svg" width="140" height="140" viewBox="0 0 140 140"><circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="#EEF0F8" stroke-width="'+sw+'"/>'+arcs+'<text x="'+cx+'" y="'+(cy-6)+'" text-anchor="middle" font-family="Plus Jakarta Sans,sans-serif" font-size="22" font-weight="800" fill="#111827">'+total+'</text><text x="'+cx+'" y="'+(cy+12)+'" text-anchor="middle" font-family="Plus Jakarta Sans,sans-serif" font-size="10" font-weight="600" fill="#6B7280">TOTAL</text></svg><div class="donut-legend">'+leg+'</div></div>';
+}
+function renderDeptTable(depts){
+  const tbody=document.getElementById('deptTableBody');
+  if(!depts.length){tbody.innerHTML='<tr><td colspan="9"><div class="empty-state">No data.</div></td></tr>';return;}
+  tbody.innerHTML=depts.map((d,i)=>{
+    const total=d.issued+d.pending,fp=total?Math.round(d.issued/total*100):0;
+    const bc=fp>=75?'var(--green)':fp>=40?'var(--amber)':'var(--red)';
+    return'<tr><td style="font-weight:700"><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:'+DEPT_COLORS[i%DEPT_COLORS.length]+';display:inline-block;flex-shrink:0"></span>'+d.dept+'</span></td><td style="font-weight:700;color:var(--primary)">'+total+'</td><td style="font-weight:700;color:var(--green)">'+d.issued+'</td><td style="font-weight:700;color:var(--amber)">'+d.pending+'</td><td><span class="chip chip-ready" style="font-size:10px">'+d.ready+'</span></td><td><span class="chip chip-wait" style="font-size:10px">'+d.waiting+'</span></td><td>'+d.newIssue+'</td><td>'+d.replacement+'</td><td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:6px;background:var(--surface3);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+fp+'%;background:'+bc+';border-radius:3px"></div></div><span style="font-size:12px;font-weight:700;color:'+bc+';min-width:34px">'+fp+'%</span></div></td></tr>';
+  }).join('');
+}
+
+// ── SIZE DISTRIBUTION CHART ───────────────────────────────────
+// Horizontal bar chart showing how many records per shoe size
+function renderSizeChart(cid, records, fill, track){
+  const el = document.getElementById(cid);
+  if(!el) return;
+  if(!records.length){ el.innerHTML='<div class="empty-state">No data.</div>'; return; }
+
+  // Aggregate by size, sorted numerically
+  const sizeMap = {};
+  records.forEach(r=>{ const s=String(r.size||'').trim(); if(s) sizeMap[s]=(sizeMap[s]||0)+1; });
+  const sorted = Object.entries(sizeMap).sort((a,b)=>Number(a[0])-Number(b[0]));
+  if(!sorted.length){ el.innerHTML='<div class="empty-state">No data.</div>'; return; }
+
+  const max = Math.max(...sorted.map(([,v])=>v), 1);
+  const total = sorted.reduce((a,[,v])=>a+v, 0);
+
+  el.innerHTML = sorted.map(([size, count])=>{
+    const pct    = Math.round(count/max*100);
+    const sharePct = Math.round(count/total*100);
+    return '<div class="bar-row" style="margin-bottom:12px">'
+      +'<div style="font-family:\'JetBrains Mono\',monospace;font-size:12px;font-weight:700;min-width:50px;color:var(--text2)">UK '+size+'</div>'
+      +'<div class="bar-track" style="background:'+track+';height:24px;border-radius:6px">'
+        +'<div class="bar-fill" style="width:'+pct+'%;background:'+fill+';border-radius:6px;height:100%;display:flex;align-items:center;padding-left:10px;font-size:11px;font-weight:700;color:#fff;white-space:nowrap;min-width:28px">'
+          +(pct>18?count:'')
+        +'</div>'
+      +'</div>'
+      +'<div style="font-size:12px;font-weight:700;color:var(--text2);min-width:28px;text-align:right">'+count+'</div>'
+      +'<div style="font-size:10px;color:var(--muted);min-width:34px;text-align:right">'+sharePct+'%</div>'
+    +'</div>';
+  }).join('');
+}
+
+// ── EMPLOYEE AUTOCOMPLETE ─────────────────────────────────────
+// Build a lookup map of name → {cardNo, dept} from issued records
+let _empLookup = {};
+
+function _buildEmpLookup(){
+  _empLookup = {};
+  _issued.forEach(r=>{
+    if(r.name && r.cardNo){
+      const key = r.name.trim();
+      // Keep most recent entry (issued is sorted latest first)
+      if(!_empLookup[key]) _empLookup[key] = { cardNo: r.cardNo.trim(), dept: r.dept||'' };
+    }
+  });
+
+  // Populate datalist
+  const dl = document.getElementById('empNameList');
+  if(dl){
+    const names = Object.keys(_empLookup).sort();
+    dl.innerHTML = names.map(n=>`<option value="${n}">`).join('');
+  }
+}
+
+function onEmpNameInput(){
+  const name = document.getElementById('empName').value.trim();
+  if(!name) return;
+  // Check if typed name exactly matches a known employee
+  const match = _empLookup[name];
+  if(match){
+    // Auto-fill Card No and Dept if currently empty
+    const cardEl = document.getElementById('cardNo');
+    const deptEl = document.getElementById('dept');
+    if(!cardEl.value) cardEl.value = match.cardNo;
+    if(!deptEl.value && match.dept) deptEl.value = match.dept;
+    // Trigger eligibility check on the filled card no
+    if(cardEl.value) setTimeout(()=>checkCardEligibility(), 50);
+  }
+}
+
+// Called by _applyCache('issued') and preload
+function _buildEmpLookupIfReady(){
+  if(_issued.length) _buildEmpLookup();
+}
+</script>
+<style>
+#customModal.show, #customAlert.show, #relocateModal.show, #ineligibleModal.show { display:flex !important; }
+.ineligible-row { border-left:3px solid var(--red) !important; background:linear-gradient(90deg,rgba(220,38,38,.04),transparent 40%) !important; }
+</style>
+
+<!-- ── CUSTOM MODAL (replaces confirm — works in Google Sites) ── -->
+<div id="customModal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(17,24,39,.45);backdrop-filter:blur(3px);align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;padding:28px 28px 22px;max-width:380px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.18);margin:auto;position:relative;top:0">
+    <p id="modalMsg" style="font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;color:#111827;line-height:1.6;margin-bottom:22px;font-weight:500;white-space:pre-line"></p>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button id="modalNo"  style="padding:9px 20px;border:1.5px solid #E2E5EF;border-radius:8px;background:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:600;color:#6B7280;cursor:pointer">Cancel</button>
+      <button id="modalYes" style="padding:9px 20px;border:none;border-radius:8px;background:#1D4ED8;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CUSTOM ALERT ── -->
+<div id="customAlert" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(17,24,39,.45);backdrop-filter:blur(3px);align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;padding:28px 28px 22px;max-width:360px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.18);margin:auto;position:relative;top:0">
+    <p id="alertMsg" style="font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;color:#111827;line-height:1.6;margin-bottom:22px;font-weight:500"></p>
+    <div style="display:flex;justify-content:flex-end">
+      <button id="alertOk" style="padding:9px 24px;border:none;border-radius:8px;background:#1D4ED8;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── RELOCATE MODAL ── -->
+<div id="relocateModal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(17,24,39,.5);backdrop-filter:blur(3px);align-items:flex-start;justify-content:center;padding-top:60px;">
+  <div style="background:#fff;border-radius:14px;width:92%;max-width:480px;box-shadow:0 12px 48px rgba(0,0,0,.22);overflow:hidden">
+
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#d97706,#b45309);padding:18px 22px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:32px;height:32px;background:rgba(255,255,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px">🔄</div>
+        <div>
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;color:#fff">Relocate Shoe Allocation</div>
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;color:#fde68a;margin-top:2px" id="relocateSubtitle"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div style="padding:20px 22px">
+      <p style="font-family:'Plus Jakarta Sans',sans-serif;font-size:12.5px;color:#6b7280;margin:0 0 14px;line-height:1.6">
+        Select the employee from the waiting list below to transfer this allocation to. The current allocation will be released and reassigned.
+      </p>
+
+      <!-- Candidate list -->
+      <div id="relocateCandidates" style="max-height:260px;overflow-y:auto;border:1.5px solid #e2e5ef;border-radius:10px;margin-bottom:16px"></div>
+
+      <div id="relocateMsg" style="display:none;padding:10px 13px;border-radius:8px;font-size:12.5px;font-weight:600;margin-bottom:12px"></div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button onclick="closeRelocateModal()" style="padding:9px 20px;border:1.5px solid #E2E5EF;border-radius:8px;background:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:600;color:#6B7280;cursor:pointer">Cancel</button>
+        <button id="btnConfirmRelocate" onclick="confirmRelocate()" disabled style="padding:9px 20px;border:none;border-radius:8px;background:#d97706;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;cursor:not-allowed;opacity:.5">Relocate</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ── INELIGIBILITY PROMPT MODAL ── -->
+<div id="ineligibleModal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(17,24,39,.5);backdrop-filter:blur(3px);align-items:flex-start;justify-content:center;padding-top:80px;">
+  <div style="background:#fff;border-radius:14px;width:92%;max-width:420px;box-shadow:0 12px 48px rgba(0,0,0,.22);overflow:hidden">
+    <div style="background:linear-gradient(135deg,#dc2626,#b91c1c);padding:18px 22px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:32px;height:32px;background:rgba(255,255,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px">⚠️</div>
+        <div>
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;color:#fff">Not Eligible</div>
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11.5px;color:#fecaca;margin-top:2px" id="inelName"></div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:20px 22px">
+      <p style="font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;color:#374151;line-height:1.7;margin:0 0 20px">
+        This employee received safety shoes on <strong style="color:#dc2626" id="inelLastIssue"></strong>, which is within the 12-month eligibility period.
+      </p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button id="btnInelAdd" style="padding:12px 16px;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:8px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;text-align:center;transition:background .15s"
+          onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'">
+          ✓ Add as Not Eligible in Pending List
+        </button>
+        <button id="btnInelCancel" style="padding:12px 16px;background:var(--surface3,#eef0f8);color:#6b7280;border:1.5px solid #e2e5ef;border-radius:8px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;text-align:center">
+          Cancel — Remove this request
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
