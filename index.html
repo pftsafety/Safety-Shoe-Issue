@@ -1853,22 +1853,34 @@ function confirmRelocate(){
 }
 
 function sendRequirementList(){
-  if(!_pending.length){ showAlert('No pending requests to send.'); return; }
-  showLoader('Sending email…');
-  postBg(
-    {action:'sendRequirementList'},
-    res=>{ hideLoader(); if(res.status==='ok') setMsg('pendingMsg','✓ Requirement list sent to manager.','ok'); else setMsg('pendingMsg','Error: '+res.message,'err'); },
-    ()=>{ hideLoader(); setMsg('pendingMsg','✗ Connection error.','err'); }
+  const waitCount = _pending.filter(r=>!r.readyToIssue && !r.ineligible).length;
+  if(!waitCount){ showAlert('No items are awaiting stock — nothing to send.'); return; }
+  showModal(
+    'Send Procurement Requirement List to manager?\n\n' + waitCount + ' size(s) awaiting stock will be included in the email.',
+    ()=>{
+      showLoader('Sending email…');
+      postBg(
+        {action:'sendRequirementList'},
+        res=>{ hideLoader(); if(res.status==='ok') setMsg('pendingMsg','✓ Requirement list sent to manager.','ok'); else setMsg('pendingMsg','Error: '+res.message,'err'); },
+        ()=>{ hideLoader(); setMsg('pendingMsg','✗ Connection error.','err'); }
+      );
+    }
   );
 }
 
 function sendReadyForIssue(){
-  if(!_pending.filter(r=>r.readyToIssue).length){ showAlert('No items are Ready to Issue. Add inventory first.'); return; }
-  showLoader('Sending email…');
-  postBg(
-    {action:'sendReadyForIssue'},
-    res=>{ hideLoader(); if(res.status==='ok') setMsg('pendingMsg','✓ Ready-for-issue list sent to manager.','ok'); else setMsg('pendingMsg','Error: '+res.message,'err'); },
-    ()=>{ hideLoader(); setMsg('pendingMsg','✗ Connection error.','err'); }
+  const readyCount = _pending.filter(r=>r.readyToIssue).length;
+  if(!readyCount){ showAlert('No items are Ready to Issue. Add inventory first.'); return; }
+  showModal(
+    'Send Ready-for-Issue notification to manager?\n\n' + readyCount + ' employee(s) are ready to collect their safety shoes.',
+    ()=>{
+      showLoader('Sending email…');
+      postBg(
+        {action:'sendReadyForIssue'},
+        res=>{ hideLoader(); if(res.status==='ok') setMsg('pendingMsg','✓ Ready-for-issue list sent to manager.','ok'); else setMsg('pendingMsg','Error: '+res.message,'err'); },
+        ()=>{ hideLoader(); setMsg('pendingMsg','✗ Connection error.','err'); }
+      );
+    }
   );
 }
 
