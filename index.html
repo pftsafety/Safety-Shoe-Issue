@@ -816,15 +816,32 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwVoTfIWO_GVR6k-tWa9fNim-6jF9MtVa498wWMiWmAID_TZ7_3PNCRmnVW1Hw8bXDqRA/exec";
 
-// INIT
-document.getElementById('reqDate').valueAsDate  = new Date();
-document.getElementById('poDate').valueAsDate   = new Date();
-document.getElementById('topDate').textContent  =
-  new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+// Global error guard — prevents a single JS error from breaking the entire portal
+window.onerror = function(msg, src, line, col, err){
+  const il = document.getElementById('initLoader');
+  const st = document.getElementById('initStatus');
+  if(il && !il.classList.contains('hide')){
+    // Show error on loading screen instead of blank page
+    if(st){ st.textContent = 'Load error — please refresh. ('+msg+')'; st.style.color='#DC2626'; }
+  }
+  return false; // don't suppress console error
+};
 
-// ── PRELOAD: fire immediately so data is ready before any tab is clicked ──
-// This single request fetches all tab data in one Apps Script call,
-// eliminating the cold-start delay on every tab switch.
+// INIT — wrapped in try-catch so a single error never blocks the whole portal
+try {
+  // Safe date setter — .valueAsDate fails on some mobile browsers (iOS Safari in iframe)
+  // Use .value with ISO string instead, which works universally
+  const todayISO = new Date().toISOString().split('T')[0];
+  const reqDateEl = document.getElementById('reqDate');
+  const poDateEl  = document.getElementById('poDate');
+  if(reqDateEl) reqDateEl.value = todayISO;
+  if(poDateEl)  poDateEl.value  = todayISO;
+
+  const topDate = document.getElementById('topDate');
+  if(topDate) topDate.textContent =
+    new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+} catch(e){ /* non-critical init error — continue */ }
+
 preloadAll();
 
 // ── CUSTOM MODAL (replaces confirm/alert — works inside Google Sites) ─────────
@@ -1280,7 +1297,7 @@ function clearNewForm(){
   ['empName','cardNo','dept'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('shoeSize').value='';
   document.getElementById('reason').value='New';
-  document.getElementById('reqDate').valueAsDate=new Date();
+  document.getElementById('reqDate').value=new Date().toISOString().split('T')[0];
   document.getElementById('bypassAlert').classList.remove('show');
   document.getElementById('dupAlert').classList.remove('show');
   document.getElementById('reason').classList.remove('sel-replace');
@@ -2361,7 +2378,7 @@ function closePO(rowIndex,poNumber){
 function clearPOForm(){
   ['poNumber','poVendor'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('poQty').value='';
-  document.getElementById('poDate').valueAsDate=new Date();
+  document.getElementById('poDate').value=new Date().toISOString().split('T')[0];
 }
 
 // ── TAB 6: DASHBOARD ──────────────────────────────────────────
