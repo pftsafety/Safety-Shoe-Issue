@@ -1140,16 +1140,21 @@ let _eligTimer  = null;
 function clearEligibility(){
   clearDupWarn();
   _eligCache = null;
+  clearTimeout(_eligDebounce);
+  _eligReqId++; // invalidate any in-flight check so its response is discarded
   const badge = document.getElementById('eligBadge');
   badge.style.display = 'none';
   badge.textContent   = '';
 }
 
+let _eligReqId = 0; // increments on every check — used to discard stale responses
+let _eligDebounce = null;
+
 function checkCardEligibility(){
   const cardNo = document.getElementById('cardNo').value.trim();
   if(!cardNo){ clearEligibility(); return; }
 
-  // Client-side duplicate check first — instant
+  // Client-side duplicate check first — instant, no network call
   const dup = _pending.find(p => String(p.cardNo||'').trim().toLowerCase() === cardNo.toLowerCase());
   if(dup){
     _showEligBadge('dup', 'Already has an active pending request for UK '+dup.size+' since '+fmtDate(dup.date));
@@ -1158,24 +1163,59 @@ function checkCardEligibility(){
     return;
   }
 
-  // Show spinner while checking
+  // If we already have a fresh cached result for this exact card, reuse it —
+  // skips a redundant network round trip if the user tabs in/out repeatedly.
+  if(_eligCache && _eligCache.cardNo.toLowerCase()===cardNo.toLowerCase() && (Date.now()-_eligCache._at)<20000){
+    _applyEligResult(_eligCache, cardNo);
+    return;
+  }
+
+  // Debounce — if the user is still editing (typing then blurring quickly,
+  // or tabbing back and forth), wait briefly before firing so we don't
+  // stack up multiple overlapping requests.
+  clearTimeout(_eligDebounce);
+  _eligDebounce = setTimeout(()=>_fireEligibilityCheck(cardNo), 250);
+}
+
+function _fireEligibilityCheck(cardNo){
+  // Re-verify the field still holds this value after the debounce delay
+  if(document.getElementById('cardNo').value.trim() !== cardNo) return;
+
+  const myReqId = ++_eligReqId; // this check's unique id
   _showEligBadge('checking', 'Checking eligibility…');
+
+  // If it's taking unusually long (slow network / cold Apps Script instance),
+  // let the user know it's still working rather than looking frozen
+  const slowTimer = setTimeout(()=>{
+    if(myReqId === _eligReqId) _showEligBadge('checking', 'Still checking… (server is warming up)');
+  }, 3500);
 
   const date = document.getElementById('reqDate').value;
   get({action:'getEligibility', cardNo, date})
     .then(res => {
-      // Only apply if the card no hasn't changed while we were waiting
+      clearTimeout(slowTimer);
+      // Discard if a newer check has started, or the field value changed
+      if(myReqId !== _eligReqId) return;
       if(document.getElementById('cardNo').value.trim() !== cardNo) return;
+      res._at = Date.now();
       _eligCache = { cardNo, ...res };
-      if(res.eligible){
-        _showEligBadge('ok', res.lastIssueDate
-          ? '✓ Eligible — last issued '+fmtDate(res.lastIssueDate)+' ('+res.monthsAgo+' months ago)'
-          : '✓ Eligible — no prior issue on record');
-      } else {
-        _showEligBadge('ineligible', '✗ Not eligible — last issued '+fmtDate(res.lastIssueDate)+' ('+res.monthsAgo+' months ago, within 12-month window)');
-      }
+      _applyEligResult(_eligCache, cardNo);
     })
-    .catch(() => { _showEligBadge('', ''); }); // clear on error, don't block
+    .catch(() => {
+      clearTimeout(slowTimer);
+      if(myReqId !== _eligReqId) return;
+      _showEligBadge('', '');
+    });
+}
+
+function _applyEligResult(res, cardNo){
+  if(res.eligible){
+    _showEligBadge('ok', res.lastIssueDate
+      ? '✓ Eligible — last issued '+fmtDate(res.lastIssueDate)+' ('+res.monthsAgo+' months ago)'
+      : '✓ Eligible — no prior issue on record');
+  } else {
+    _showEligBadge('ineligible', '✗ Not eligible — last issued '+fmtDate(res.lastIssueDate)+' ('+res.monthsAgo+' months ago, within 12-month window)');
+  }
 }
 
 function _showEligBadge(type, msg){
@@ -1228,10 +1268,15 @@ function submitRequest(){
     const btn=document.getElementById('btnSubmit');
     btn.disabled=true;
     setMsg('reqMsg','Submitting request…','inf');
+    // Let the user know if this is taking unusually long instead of looking frozen
+    const slowTimer = setTimeout(()=>{
+      setMsg('reqMsg','Still submitting… (server is warming up, this can take a few seconds)','inf');
+    }, 3500);
     const finalReason = overrideReason || reason;
     postBg(
       {action:'newRequest',name,cardNo,dept,size,date,reason:finalReason,bypass:(finalReason==='Damaged/Replacement'?true:bypass)},
       res => {
+        clearTimeout(slowTimer);
         btn.disabled=false;
         if(res.status==='pending'){
           setMsg('reqMsg', res.readyToIssue
@@ -1270,7 +1315,7 @@ function submitRequest(){
           setMsg('reqMsg','Error: '+(res.message||'Unknown — check browser console for details'),'err');
         }
       },
-      () => { btn.disabled=false; setMsg('reqMsg','✗ Connection error. Please try again.','err'); }
+      () => { clearTimeout(slowTimer); btn.disabled=false; setMsg('reqMsg','✗ Connection error. Please try again.','err'); }
     );
   };
 
