@@ -1266,7 +1266,8 @@ function submitRequest(){
           document.getElementById('dupAlert').classList.add('show');
           setMsg('reqMsg','Duplicate blocked by server.','err');
         } else {
-          setMsg('reqMsg','Error: '+(res.message||'Unknown'),'err');
+          console.error('newRequest failed:', res);
+          setMsg('reqMsg','Error: '+(res.message||'Unknown — check browser console for details'),'err');
         }
       },
       () => { btn.disabled=false; setMsg('reqMsg','✗ Connection error. Please try again.','err'); }
