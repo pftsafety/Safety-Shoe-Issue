@@ -908,11 +908,18 @@ const _loading = new Set();
 let   _preloadDone = false;
 
 // ── PRELOAD ───────────────────────────────────────────────────
-function preloadAll(){
-  const initL   = document.getElementById('initLoader');
-  const initSt  = document.getElementById('initStatus');
+function preloadAll(attempt){
+  attempt = attempt || 1;
+  const initL  = document.getElementById('initLoader');
+  const initSt = document.getElementById('initStatus');
+  const MAX_ATTEMPTS = 3;
+
+  if(attempt > 1 && initSt) initSt.textContent = 'Retrying… (attempt '+attempt+' of '+MAX_ATTEMPTS+')';
 
   get({action:'getAll'}).then(data=>{
+    // Server caught an internal error and returned it as JSON (see doGet try/catch)
+    if(data && data.error){ throw new Error(data.message || 'Server error'); }
+
     if(data.pending)   _pending = data.pending;
     if(data.issued)  { _issued  = data.issued; populateDeptList(); _populateIssuedFilters(data.issued); _buildEmpLookup(); }
     if(data.inventory){
@@ -932,10 +939,24 @@ function preloadAll(){
     const active = document.querySelector('.panel.active');
     if(active){ const n=active.id.replace('tab-',''); if(!_loaded[n]&&!_loading.has(n)) _applyCache(n); }
     _startAutoRefresh();
-  }).catch(()=>{
+  }).catch(err=>{
+    if(attempt < MAX_ATTEMPTS){
+      // Retry with increasing delay — handles transient network blips / cold starts
+      setTimeout(()=>preloadAll(attempt+1), attempt * 1500);
+      return;
+    }
+    // All retries exhausted — show a manual retry option instead of a dead end
     _preloadDone = false;
-    if(initSt) initSt.textContent = 'Failed to load. Please refresh the page.';
-    if(initSt) initSt.style.color = '#DC2626';
+    if(initSt){
+      initSt.innerHTML = 'Failed to load. <span id="initRetryBtn" style="text-decoration:underline;cursor:pointer;font-weight:700">Tap to retry</span>';
+      initSt.style.color = '#DC2626';
+      const btn = document.getElementById('initRetryBtn');
+      if(btn) btn.onclick = ()=>{
+        initSt.style.color = '';
+        initSt.textContent = 'Retrying…';
+        preloadAll(1);
+      };
+    }
   });
 }
 
@@ -1079,23 +1100,27 @@ function reloadTab(name){
   _loaded[name]=false;
   if(name==='pending'){
     showPendingSkeleton();
-    get({action:'getPending'}).then(d=>{ _pending=d; _applyCache('pending'); }).catch(()=>{ _loading.delete('pending'); document.getElementById('pendingList').innerHTML='<div class="empty-state">Failed — click Refresh to retry.</div>'; });
+    get({action:'getPending'}).then(d=>{ if(d&&d.error) throw new Error(d.message); _pending=d; _applyCache('pending'); }).catch(()=>{ _loading.delete('pending'); document.getElementById('pendingList').innerHTML='<div class="empty-state">Failed — click Refresh to retry.</div>'; });
   } else if(name==='issued'){
     showIssuedSkeleton();
-    get({action:'getIssued'}).then(d=>{ _issued=d; _applyCache('issued'); }).catch(()=>{ _loading.delete('issued'); document.getElementById('issuedBody').innerHTML='<tr><td colspan="9"><div class="empty-state">Failed.</div></td></tr>'; });
+    get({action:'getIssued'}).then(d=>{ if(d&&d.error) throw new Error(d.message); _issued=d; _applyCache('issued'); }).catch(()=>{ _loading.delete('issued'); document.getElementById('issuedBody').innerHTML='<tr><td colspan="9"><div class="empty-state">Failed.</div></td></tr>'; });
   } else if(name==='inventory'){
     showInvSkeleton();
     Promise.all([get({action:'getInventory'}),get({action:'getInOrderQty'})]).then(([inv,io])=>{
+      if(inv&&inv.error) throw new Error(inv.message);
       _invData=inv; const el=document.getElementById('inOrderQty'); if(el) el.textContent=(io.inOrderQty||0)+' pairs';
       _applyCache('inventory');
     }).catch(()=>{ _loading.delete('inventory'); document.getElementById('invCards').innerHTML='<div class="empty-state">Failed.</div>'; });
   } else if(name==='po'){
     showPOSkeleton();
-    get({action:'getPOs'}).then(d=>{ _pos=d; _applyCache('po'); }).catch(()=>{ _loading.delete('po'); document.getElementById('poBody').innerHTML='<tr><td colspan="8"><div class="empty-state">Failed.</div></td></tr>'; });
+    get({action:'getPOs'}).then(d=>{ if(d&&d.error) throw new Error(d.message); _pos=d; _applyCache('po'); }).catch(()=>{ _loading.delete('po'); document.getElementById('poBody').innerHTML='<tr><td colspan="8"><div class="empty-state">Failed.</div></td></tr>'; });
   } else if(name==='dashboard'){
     showDashSkeleton();
     const rb=document.getElementById('btnRefresh'); if(rb) rb.classList.add('spin');
-    Promise.all([get({action:'getPending'}),get({action:'getIssued'})]).then(([pd,id])=>{ _pending=pd; _issued=id; _applyCache('dashboard'); }).catch(()=>{ _loading.delete('dashboard'); if(rb) rb.classList.remove('spin'); });
+    Promise.all([get({action:'getPending'}),get({action:'getIssued'})]).then(([pd,id])=>{
+      if(pd&&pd.error) throw new Error(pd.message);
+      _pending=pd; _issued=id; _applyCache('dashboard');
+    }).catch(()=>{ _loading.delete('dashboard'); if(rb) rb.classList.remove('spin'); });
   }
 }
 
