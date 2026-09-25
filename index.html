@@ -892,14 +892,23 @@ function fmtDate(raw){
 // ── HTTP ──────────────────────────────────────────────────────
 // Background fire-and-forget POST — no loader, no UI blocking
 function postBg(payload, onDone, onErr) {
-  fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify(payload) })
+  fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify(payload), cache:'no-store' })
     .then(r => r.json())
     .then(res => { if(onDone) onDone(res); })
     .catch(err => { if(onErr) onErr(err); });
 }
 // Standard awaitable POST (used for Issue button where we need UI update)
-function post(payload){ return fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload)}).then(r=>r.json()); }
-function get(params){ return fetch(SCRIPT_URL+'?'+new URLSearchParams(params)).then(r=>r.json()); }
+function post(payload){ return fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload),cache:'no-store'}).then(r=>r.json()); }
+function get(params){
+  // Cache-busting: GET requests to the same action (e.g. ?action=getPending)
+  // reuse an identical URL every time, which browsers and some mobile network
+  // proxies WILL cache — silently serving a stale response even though the
+  // Apps Script execution log shows a fresh run completed. Adding a unique
+  // timestamp param per call, plus cache:'no-store', forces every request to
+  // actually hit the network.
+  const withBust = new URLSearchParams({ ...params, _t: Date.now() });
+  return fetch(SCRIPT_URL + '?' + withBust, { cache: 'no-store' }).then(r => r.json());
+}
 function setMsg(id,txt,t){ const e=document.getElementById(id); e.textContent=txt; e.className='msg '+(t==='ok'?'ok':t==='err'?'err':'inf'); }
 
 // ── TAB NAV ───────────────────────────────────────────────────
