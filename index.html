@@ -849,7 +849,7 @@ try {
     new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
 } catch(e){ /* non-critical init error — continue */ }
 
-preloadAll();
+// (preloadAll() is started at the very end of this script, after all state is declared)
 
 // ── CUSTOM MODAL (replaces confirm/alert — works inside Google Sites) ─────────
 // Sites blocks window.confirm() and window.alert(). We use an inline modal instead.
@@ -899,75 +899,109 @@ function postBg(payload, onDone, onErr) {
 }
 // Standard awaitable POST (used for Issue button where we need UI update)
 function post(payload){ return fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload),cache:'no-store'}).then(r=>r.json()); }
-function get(params){
-  // Cache-busting: GET requests to the same action (e.g. ?action=getPending)
-  // reuse an identical URL every time, which browsers and some mobile network
-  // proxies WILL cache — silently serving a stale response even though the
-  // Apps Script execution log shows a fresh run completed. Adding a unique
-  // timestamp param per call, plus cache:'no-store', forces every request to
-  // actually hit the network.
+function get(params, timeoutMs){
+  // Cache-busting: identical GET URLs (e.g. ?action=getPending) can be served
+  // from the browser/proxy cache. A unique _t param + cache:'no-store' forces a
+  // real network hit every time.
   const withBust = new URLSearchParams({ ...params, _t: Date.now() });
-  return fetch(SCRIPT_URL + '?' + withBust, { cache: 'no-store' }).then(r => r.json());
+  // Timeout: on a weak mobile signal or a cold Apps Script start a request can
+  // hang for a very long time. Abort after timeoutMs so the caller can retry.
+  const ctl   = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  const timer = ctl ? setTimeout(()=>ctl.abort(), timeoutMs || 30000) : null;
+  return fetch(SCRIPT_URL + '?' + withBust, { cache: 'no-store', signal: ctl ? ctl.signal : undefined })
+    .then(r => r.json())
+    .finally(()=>{ if(timer) clearTimeout(timer); });
 }
 function setMsg(id,txt,t){ const e=document.getElementById(id); e.textContent=txt; e.className='msg '+(t==='ok'?'ok':t==='err'?'err':'inf'); }
 
 // ── TAB NAV ───────────────────────────────────────────────────
 const _loaded  = {};
 const _loading = new Set();
-let   _preloadDone = false;
+let   _preloadDone   = false;  // CORE data (pending list + stock) is in memory → portal can open
+let   _preloadBusy   = false;
+let   _secondaryDone = false;  // issued history + purchase orders are in memory
+let   _secondaryBusy = false;
+const _NEEDS_SECONDARY = { issued:1, po:1, dashboard:1 };
 
 // ── PRELOAD ───────────────────────────────────────────────────
+// Opening the portal only needs the small "core" dataset (pending list + stock,
+// ~1 KB). The heavy issued-history download (~190 KB) happens in the background
+// afterwards, so a cold server or weak mobile signal no longer blocks the portal.
 function preloadAll(attempt){
   attempt = attempt || 1;
   const initL  = document.getElementById('initLoader');
   const initSt = document.getElementById('initStatus');
-  const MAX_ATTEMPTS = 3;
-
+  const MAX_ATTEMPTS = 4;
+  if(attempt === 1) _preloadBusy = true;
   if(attempt > 1 && initSt) initSt.textContent = 'Retrying… (attempt '+attempt+' of '+MAX_ATTEMPTS+')';
 
-  get({action:'getAll'}).then(data=>{
-    // Server caught an internal error and returned it as JSON (see doGet try/catch)
-    if(data && data.error){ throw new Error(data.message || 'Server error'); }
-
-    if(data.pending)   _pending = data.pending;
-    if(data.issued)  { _issued  = data.issued; populateDeptList(); _populateIssuedFilters(data.issued); _buildEmpLookup(); }
-    if(data.inventory){
-      _invData = data.inventory;
-      const el = document.getElementById('inOrderQty');
-      if(el) el.textContent = (data.inOrderQty||0)+' pairs';
-    }
-    if(data.pos) _pos = data.pos;
-    _preloadDone = true;
+  get({action:'getCore'}, 30000).then(data=>{
+    if(!data || data.error || !Array.isArray(data.pending)){ throw new Error((data && data.message) || 'Bad response from server'); }
+    _pending = data.pending;
+    _invData = data.inventory || [];
+    const el = document.getElementById('inOrderQty');
+    if(el) el.textContent = (data.inOrderQty||0)+' pairs';
+    _preloadDone = true; _preloadBusy = false;
 
     // Dismiss loading screen
     if(initSt) initSt.textContent = 'Ready ✓';
     setTimeout(()=>{ if(initL) initL.classList.add('hide'); }, 300);
     setTimeout(()=>{ if(initL) initL.style.display='none'; }, 900);
 
-    // Render active tab
+    // Render whichever tab is open
     const active = document.querySelector('.panel.active');
-    if(active){ const n=active.id.replace('tab-',''); if(!_loaded[n]&&!_loading.has(n)) _applyCache(n); }
+    if(active){ const n=active.id.replace('tab-',''); if(!_loaded[n]&&!_loading.has(n)) _renderTab(n); }
     _startAutoRefresh();
+    loadSecondary(1);          // heavy data — quietly, after the portal is already usable
   }).catch(err=>{
+    console.warn('Portal load attempt '+attempt+' failed:', err);
     if(attempt < MAX_ATTEMPTS){
-      // Retry with increasing delay — handles transient network blips / cold starts
-      setTimeout(()=>preloadAll(attempt+1), attempt * 1500);
+      setTimeout(()=>preloadAll(attempt+1), attempt * 2000);   // 2s, 4s, 6s
       return;
     }
-    // All retries exhausted — show a manual retry option instead of a dead end
-    _preloadDone = false;
+    // All retries used — leave a manual retry instead of a dead end
+    _preloadDone = false; _preloadBusy = false;
     if(initSt){
-      initSt.innerHTML = 'Failed to load. <span id="initRetryBtn" style="text-decoration:underline;cursor:pointer;font-weight:700">Tap to retry</span>';
+      const why = (err && err.name === 'AbortError') ? 'timed out' : ((err && err.message) || 'network error');
       initSt.style.color = '#DC2626';
-      const btn = document.getElementById('initRetryBtn');
-      if(btn) btn.onclick = ()=>{
-        initSt.style.color = '';
-        initSt.textContent = 'Retrying…';
-        preloadAll(1);
-      };
+      initSt.textContent = 'Could not load (' + why + '). ';
+      const btn = document.createElement('span');
+      btn.textContent = 'Tap to retry';
+      btn.style.cssText = 'text-decoration:underline;cursor:pointer;font-weight:700';
+      btn.onclick = ()=>{ initSt.style.color=''; initSt.textContent='Retrying…'; preloadAll(1); };
+      initSt.appendChild(btn);
     }
   });
 }
+
+// Issued history + purchase orders: loaded in the background after the portal opens.
+function loadSecondary(attempt){
+  attempt = attempt || 1;
+  const MAX = 4;
+  _secondaryBusy = true;
+  get({action:'getSecondary'}, 60000).then(data=>{
+    if(!data || data.error || !Array.isArray(data.issued)){ throw new Error((data && data.message) || 'Bad response from server'); }
+    _issued = data.issued;
+    _pos    = data.pos || [];
+    _secondaryDone = true; _secondaryBusy = false;
+    try { populateDeptList(); _populateIssuedFilters(_issued); _buildEmpLookup(); } catch(e){ console.error(e); }
+    // If the user is already waiting on a tab that needed this data, render it now
+    const active = document.querySelector('.panel.active');
+    if(active){ const n=active.id.replace('tab-',''); if(_NEEDS_SECONDARY[n] && !_loaded[n] && !_loading.has(n)) _applyCache(n); }
+  }).catch(err=>{
+    console.warn('Background load attempt '+attempt+' failed:', err);
+    if(attempt < MAX){ setTimeout(()=>loadSecondary(attempt+1), attempt * 4000); return; }
+    _secondaryBusy = false;     // give up quietly — each tab fetches its own data when opened
+    const active = document.querySelector('.panel.active');
+    if(active){ const n=active.id.replace('tab-',''); if(_NEEDS_SECONDARY[n] && !_loaded[n] && !_loading.has(n)) reloadTab(n); }
+  });
+}
+
+// When the phone regains signal, resume whatever hadn't finished loading
+window.addEventListener('online', ()=>{
+  if(!_preloadDone && !_preloadBusy) preloadAll(1);
+  else if(_preloadDone && !_secondaryDone && !_secondaryBusy) loadSecondary(1);
+});
 
 // ── AWAITING STOCK INLINE BREAKDOWN ──────────────────────────
 function showWaitBreakdown(){
@@ -1025,22 +1059,31 @@ function _silentUpdateStats(){
     .forEach(({id,v})=>{ const el=document.getElementById(id); if(el&&parseInt(el.textContent)!==v) animateCounter(id,v); });
 }
 
+let _refreshTick = 0, _refreshBusy = false;
 function _startAutoRefresh(){
   if(_autoRefreshTimer) clearInterval(_autoRefreshTimer);
   _autoRefreshTimer=setInterval(()=>{
-    if(document.hidden) return;
+    if(document.hidden || _refreshBusy) return;
     if(Date.now()-_lastUserActivity<15000) return;
-    // Fetch silently — only update cache variables, never touch the DOM
-    get({action:'getAll'}).then(data=>{
-      if(data.pending)   _pending=data.pending;
-      if(data.issued)  { _issued=data.issued; _buildEmpLookupIfReady(); }
-      if(data.inventory) _invData=data.inventory;
-      if(data.pos)       _pos=data.pos;
+    _refreshBusy = true;
+    _refreshTick++;
+    const withHistory = _secondaryDone && (_refreshTick % 5 === 0);
+    // Silent: only updates cached variables + stat numbers, never re-renders a list
+    get({action:'getCore'}, 30000).then(data=>{
+      if(!data || data.error || !Array.isArray(data.pending)) return;
+      _pending = data.pending;
+      if(Array.isArray(data.inventory)) _invData = data.inventory;
       if(data.inOrderQty!=null){ const el=document.getElementById('inOrderQty'); if(el) el.textContent=data.inOrderQty+' pairs'; }
-      // Reset loaded flags so next tab click re-renders from fresh cache
-      Object.keys(_loaded).forEach(k=>{ _loaded[k]=false; });
+      ['pending','inventory','dashboard'].forEach(k=>{ _loaded[k]=false; });   // next visit re-renders fresh
       _silentUpdateStats();
-    }).catch(()=>{});
+      if(!withHistory) return;
+      return get({action:'getSecondary'}, 60000).then(sec=>{
+        if(!sec || sec.error || !Array.isArray(sec.issued)) return;
+        _issued = sec.issued; _pos = sec.pos || _pos;
+        _buildEmpLookupIfReady();
+        ['issued','po','dashboard'].forEach(k=>{ _loaded[k]=false; });
+      });
+    }).catch(()=>{}).finally(()=>{ _refreshBusy = false; });
   }, AUTO_REFRESH_MS);
 }
 
@@ -1089,10 +1132,25 @@ function showTab(name,btn){
   if(_loading.has(name)) return;  // fetch in flight, skeleton showing
 
   if(_preloadDone){
-    _applyCache(name);   // data in cache — render instantly
+    _renderTab(name);    // data in cache — render instantly
   } else {
     reloadTab(name);     // preload not done — fetch individually
   }
+}
+
+// Render a tab from cache — unless it needs the background history that hasn't arrived yet.
+function _renderTab(name){
+  if(_NEEDS_SECONDARY[name] && !_secondaryDone){
+    if(_secondaryBusy) _showSkeletonFor(name);   // arriving shortly — loadSecondary() will render it
+    else reloadTab(name);                        // background load unavailable — fetch this tab alone
+  } else {
+    _applyCache(name);
+  }
+}
+function _showSkeletonFor(name){
+  if(name==='issued') showIssuedSkeleton();
+  else if(name==='po') showPOSkeleton();
+  else if(name==='dashboard') showDashSkeleton();
 }
 
 // ── SKELETON HELPERS ──────────────────────────────────────────
@@ -2599,6 +2657,9 @@ function onEmpNameInput(){
 function _buildEmpLookupIfReady(){
   if(_issued.length) _buildEmpLookup();
 }
+
+// ── START: kick off the data load once every function/variable above exists ──
+preloadAll();
 </script>
 <style>
 #customModal.show, #customAlert.show, #relocateModal.show, #ineligibleModal.show { display:flex !important; }
