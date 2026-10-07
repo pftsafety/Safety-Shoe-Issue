@@ -4,7 +4,15 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>SafetyShoe Portal — PPE Distribution</title>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<!-- Open the connections the data request needs while the page is still parsing
+     (Apps Script answers from script.google.com, then redirects to script.googleusercontent.com) -->
+<link rel="preconnect" href="https://script.google.com" crossorigin>
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Fonts load without blocking the first paint (text shows immediately, fonts swap in) -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"></noscript>
 <style>
 :root{
   --bg:#F0F2F7;--surface:#FFFFFF;--surface2:#F7F8FC;--surface3:#EEF0F8;
@@ -38,8 +46,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 .init-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:21px;font-weight:800;color:#1D4ED8;letter-spacing:-.02em;margin-bottom:4px;text-align:center;padding:0 24px}
 .init-sub{font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;color:#64748b;margin-bottom:34px;text-align:center}
 .init-bar-wrap{width:220px;height:4px;background:#DBEAFE;border-radius:2px;overflow:hidden;margin-bottom:12px}
-.init-bar{height:100%;width:0%;background:linear-gradient(90deg,#1D4ED8,#059669);border-radius:2px;animation:initProgress 2.5s cubic-bezier(.4,0,.2,1) forwards}
-@keyframes initProgress{0%{width:0%}40%{width:52%}75%{width:80%}92%{width:91%}100%{width:100%}}
+.init-bar{height:100%;width:0%;background:linear-gradient(90deg,#1D4ED8,#059669);border-radius:2px;animation:initProgress 25s cubic-bezier(.1,.7,.2,1) forwards}
+@keyframes initProgress{0%{width:0%}12%{width:55%}40%{width:80%}100%{width:94%}}
 .init-status{font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;color:#94a3b8;letter-spacing:.04em}
 
 /* SKELETON */
@@ -924,19 +932,81 @@ let   _secondaryBusy = false;
 const _NEEDS_SECONDARY = { issued:1, po:1, dashboard:1 };
 
 // ── PRELOAD ───────────────────────────────────────────────────
-// Opening the portal only needs the small "core" dataset (pending list + stock,
-// ~1 KB). The heavy issued-history download (~190 KB) happens in the background
-// afterwards, so a cold server or weak mobile signal no longer blocks the portal.
-function preloadAll(attempt){
-  attempt = attempt || 1;
+// Opening the portal only needs the small "core" dataset (pending list + stock).
+// The heavy issued-history download happens in the background afterwards.
+//
+// Google's servers sometimes answer a request very slowly or drop it (a cold start
+// or transient error appears as "Failed to fetch"). Waiting for one request to fail
+// and THEN retrying made the portal take 20–30 s to open. Instead we use HEDGED
+// requests: if the first hasn't answered after a few seconds we start a backup in
+// parallel (and another later) and use whichever answers first.
+function fetchCoreHedged(onNote){
+  return new Promise((resolve, reject)=>{
+    const MAX_LAUNCH = 4, BACKUP_AT = [4000, 9000, 15000], DEADLINE = 50000, PER_REQUEST = 25000;
+    let launched = 0, inflight = 0, done = false;
+    const ctls = [], timers = [], notes = [], t0 = Date.now();
+    const secs = ()=> ((Date.now()-t0)/1000).toFixed(1)+'s';
+    function finish(fn, val){
+      if(done) return; done = true;
+      timers.forEach(clearTimeout);
+      ctls.forEach(c=>{ try{ c.abort(); }catch(e){} });   // stop the slower duplicates
+      fn(val);
+    }
+    function launch(){
+      if(done || launched >= MAX_LAUNCH) return;
+      const n = ++launched; inflight++;
+      const ctl = (typeof AbortController !== 'undefined') ? new AbortController() : { abort(){}, signal: undefined };
+      ctls.push(ctl);
+      const qs = new URLSearchParams({ action:'getCore', _t: Date.now()+'_'+n });   // unique URL per request
+      const killer = setTimeout(()=>ctl.abort(), PER_REQUEST);
+      fetch(SCRIPT_URL + '?' + qs, { cache:'no-store', signal: ctl.signal })
+        .then(r => r.json())
+        .then(data => {
+          if(!data || data.error || !Array.isArray(data.pending)) throw new Error((data && data.message) || 'Bad response from server');
+          finish(resolve, data);
+        })
+        .catch(err => {
+          if(done) return;
+          const why = (err && err.name === 'AbortError') ? 'timed out' : ((err && err.message) || 'network error');
+          notes.push('#'+n+' '+why+' @'+secs());
+          if(onNote) onNote(notes);
+          console.warn('Core request #'+n+' failed:', err);
+          inflight--;
+          if(inflight === 0){                                   // nothing left running — go again right away
+            if(launched < MAX_LAUNCH) timers.push(setTimeout(launch, 300));
+            else finish(reject, err);
+          }
+        })
+        .finally(()=>clearTimeout(killer));
+    }
+    launch();
+    BACKUP_AT.forEach(ms => timers.push(setTimeout(launch, ms)));
+    timers.push(setTimeout(()=>finish(reject, new Error('timed out')), DEADLINE));
+  });
+}
+
+function preloadAll(cycle){
+  cycle = cycle || 1;
+  const MAX_CYCLES = 2;
   const initL  = document.getElementById('initLoader');
   const initSt = document.getElementById('initStatus');
-  const MAX_ATTEMPTS = 4;
-  if(attempt === 1) _preloadBusy = true;
-  if(attempt > 1 && initSt) initSt.textContent = 'Retrying… (attempt '+attempt+' of '+MAX_ATTEMPTS+')';
+  if(cycle === 1) _preloadBusy = true;
 
-  get({action:'getCore'}, 30000).then(data=>{
-    if(!data || data.error || !Array.isArray(data.pending)){ throw new Error((data && data.message) || 'Bad response from server'); }
+  // Live elapsed-seconds counter + a small line showing why any attempt failed
+  let detail = document.getElementById('initDetail');
+  if(!detail && initL){
+    detail = document.createElement('div'); detail.id = 'initDetail';
+    detail.style.cssText = 'margin-top:10px;max-width:280px;text-align:center;font:600 10px/1.5 "Plus Jakarta Sans",sans-serif;color:#94a3b8';
+    initL.appendChild(detail);
+  }
+  const t0 = Date.now();
+  const tick = setInterval(()=>{
+    const sec = Math.round((Date.now()-t0)/1000);
+    if(initSt && !_preloadDone) initSt.textContent = (sec < 6 ? 'Loading data… ' : 'Server is waking up… ') + sec + 's';
+  }, 1000);
+
+  fetchCoreHedged(notes=>{ if(detail) detail.textContent = notes.slice(-3).join(' · '); }).then(data=>{
+    clearInterval(tick);
     _pending = data.pending;
     _invData = data.inventory || [];
     const el = document.getElementById('inOrderQty');
@@ -944,7 +1014,10 @@ function preloadAll(attempt){
     _preloadDone = true; _preloadBusy = false;
 
     // Dismiss loading screen
+    const bar = document.querySelector('.init-bar');
+    if(bar){ bar.style.animation = 'none'; bar.style.transition = 'width .25s'; bar.style.width = '100%'; }
     if(initSt) initSt.textContent = 'Ready ✓';
+    if(detail) detail.textContent = '';
     setTimeout(()=>{ if(initL) initL.classList.add('hide'); }, 300);
     setTimeout(()=>{ if(initL) initL.style.display='none'; }, 900);
 
@@ -954,12 +1027,13 @@ function preloadAll(attempt){
     _startAutoRefresh();
     loadSecondary(1);          // heavy data — quietly, after the portal is already usable
   }).catch(err=>{
-    console.warn('Portal load attempt '+attempt+' failed:', err);
-    if(attempt < MAX_ATTEMPTS){
-      setTimeout(()=>preloadAll(attempt+1), attempt * 2000);   // 2s, 4s, 6s
+    clearInterval(tick);
+    if(cycle < MAX_CYCLES){
+      if(initSt) initSt.textContent = 'Retrying…';
+      setTimeout(()=>preloadAll(cycle+1), 1500);
       return;
     }
-    // All retries used — leave a manual retry instead of a dead end
+    // Both rounds failed — leave a manual retry instead of a dead end
     _preloadDone = false; _preloadBusy = false;
     if(initSt){
       const why = (err && err.name === 'AbortError') ? 'timed out' : ((err && err.message) || 'network error');
