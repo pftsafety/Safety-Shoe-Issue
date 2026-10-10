@@ -245,14 +245,14 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 }
 /* Filling state — driven by JS class */
 .btn-issue.filling::after{
-  width:100%;
-  transition:width .8s cubic-bezier(.4,0,.2,1);
+  left:-45%;width:45%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);
+  animation:issueSweep 1s ease-in-out infinite;
 }
 /* Success state */
 .btn-issue.issued{
   background:linear-gradient(135deg,#047857,#065f46);
   box-shadow:0 2px 12px rgba(4,120,87,.5);
-  animation:none;
   transform:scale(1.06);
   transition:transform .18s cubic-bezier(.34,1.56,.64,1),background .2s;
 }
@@ -274,10 +274,62 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 .btn-issue:not(:disabled):not(.filling):not(.issued){
   animation:issue-pulse 2.2s ease-out infinite;
 }
-.btn-issue:disabled{
+.btn-issue:disabled:not(.filling):not(.issued):not(.failed){
   background:var(--surface3);color:var(--muted2);
   border:1px solid var(--border);box-shadow:none;
   cursor:not-allowed;animation:none;
+}
+
+/* ── ISSUE BUTTON: working → success / failure ───────────── */
+/* Working: spinner + an endless light sweep until the server answers */
+.btn-issue.filling{background:linear-gradient(135deg,#047857,#059669);color:#fff;cursor:progress;box-shadow:0 2px 12px rgba(5,150,105,.45)}
+.issue-spin{display:inline-block;width:11px;height:11px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes issueSweep{from{left:-45%}to{left:100%}}
+/* Success: the tick draws itself and a ring expands from the button */
+.issue-check-svg{width:14px;height:14px;vertical-align:-2px;margin-right:5px;fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.issue-check-svg path{stroke-dasharray:24;stroke-dashoffset:24;animation:eligDraw .35s ease-out .1s forwards}
+@keyframes issueRing{0%{box-shadow:0 0 0 0 rgba(5,150,105,.55)}100%{box-shadow:0 0 0 16px rgba(5,150,105,0)}}
+.btn-issue.issued{color:#fff;cursor:default;animation:issueRing .7s ease-out 1}
+/* Failure: turns red and shakes, then resets */
+.btn-issue.failed{background:linear-gradient(135deg,#DC2626,#b91c1c);color:#fff;border:none;box-shadow:0 2px 10px rgba(220,38,38,.4);cursor:default;animation:eligShake .45s ease both}
+/* The row itself reacts too */
+.pending-item.issuing{border-color:#6EE7B7 !important;box-shadow:0 0 0 3px rgba(5,150,105,.10) !important;animation:rowWorking 1.2s ease-in-out infinite}
+@keyframes rowWorking{50%{box-shadow:0 0 0 6px rgba(5,150,105,.03)}}
+.pending-item.issued-flash{animation:rowFlash .9s ease-out both}
+@keyframes rowFlash{0%{background:#D1FAE5}100%{background:transparent}}
+
+/* ── ELIGIBILITY CHECK ────────────────────────────────────── */
+#eligBadge{position:relative;overflow:hidden}
+/* while checking: spinning ring + a scanning light along the bottom edge */
+.elig-spin{width:14px;height:14px;border:2px solid #CBD5E1;border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+.elig-scan{position:absolute;left:-40%;bottom:0;height:2px;width:40%;background:linear-gradient(90deg,transparent,var(--primary),transparent);animation:eligScan 1.1s ease-in-out infinite}
+@keyframes eligScan{to{left:100%}}
+/* result: badge slides in, icon draws itself */
+.elig-in{animation:eligIn .35s cubic-bezier(.2,.9,.3,1.2) both}
+@keyframes eligIn{from{opacity:0;transform:translateY(-6px) scale(.97)}to{opacity:1;transform:none}}
+.elig-in.elig-shake{animation:eligIn .3s cubic-bezier(.2,.9,.3,1.2) both, eligShake .45s ease .3s both}
+@keyframes eligShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.elig-bounce{animation:eligBounce .5s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes eligBounce{0%{transform:scale(.92);opacity:0}60%{transform:scale(1.04);opacity:1}100%{transform:scale(1)}}
+.elig-icon{width:18px;height:18px;flex-shrink:0}
+.elig-icon circle{fill:none;stroke-width:2;stroke-dasharray:64;stroke-dashoffset:64;animation:eligDraw .45s ease-out .05s forwards}
+.elig-icon path{fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:24;stroke-dashoffset:24;animation:eligDraw .35s ease-out .35s forwards}
+@keyframes eligDraw{to{stroke-dashoffset:0}}
+.elig-icon.ok circle,.elig-icon.ok path{stroke:#059669}
+.elig-icon.bad circle,.elig-icon.bad path{stroke:#DC2626}
+.elig-icon.warn circle,.elig-icon.warn path{stroke:#D97706}
+/* the Card No field mirrors the state */
+#cardNo.elig-checking{border-color:var(--primary);box-shadow:0 0 0 3px rgba(29,78,216,.12);animation:eligPulse 1.2s ease-in-out infinite}
+@keyframes eligPulse{50%{box-shadow:0 0 0 6px rgba(29,78,216,.03)}}
+#cardNo.elig-ok{border-color:#059669;box-shadow:0 0 0 3px rgba(5,150,105,.14);transition:box-shadow .3s,border-color .3s}
+#cardNo.elig-bad{border-color:#DC2626;box-shadow:0 0 0 3px rgba(220,38,38,.12);transition:box-shadow .3s,border-color .3s}
+
+/* Respect "reduce motion" system setting: keep the colour/state changes, drop the movement */
+@media (prefers-reduced-motion: reduce){
+  .elig-in,.elig-in.elig-shake,.elig-bounce,.elig-scan,.btn-issue.issued,.btn-issue.failed,
+  .pending-item.issuing,.pending-item.issued-flash,#cardNo.elig-checking{animation:none !important}
+  .elig-icon circle,.elig-icon path,.issue-check-svg path{animation:none !important;stroke-dashoffset:0 !important}
+  .btn-issue.filling::after{animation:none !important;left:0 !important;width:100% !important}
 }
 
 /* TABLE */
@@ -1285,7 +1337,10 @@ function clearEligibility(){
   _eligReqId++; // invalidate any in-flight check so its response is discarded
   const badge = document.getElementById('eligBadge');
   badge.style.display = 'none';
+  badge.className     = '';
   badge.textContent   = '';
+  const card = document.getElementById('cardNo');
+  if(card) card.classList.remove('elig-checking','elig-ok','elig-bad');
 }
 
 let _eligReqId = 0; // increments on every check — used to discard stale responses
@@ -1361,18 +1416,45 @@ function _applyEligResult(res, cardNo){
 
 function _showEligBadge(type, msg){
   const badge = document.getElementById('eligBadge');
-  if(!msg){ badge.style.display='none'; return; }
-  badge.style.display = 'flex';
+  const card  = document.getElementById('cardNo');
+
+  // The Card No field mirrors the state (blue pulse → green / red)
+  if(card){
+    card.classList.remove('elig-checking','elig-ok','elig-bad');
+    if(type==='checking') card.classList.add('elig-checking');
+    else if(type==='ok') card.classList.add('elig-ok');
+    else if(type==='ineligible' || type==='dup') card.classList.add('elig-bad');
+  }
+  if(!msg){ badge.style.display='none'; badge.className=''; badge.textContent=''; return; }
 
   const styles = {
     ok:         'background:#ECFDF5;color:#065F46;border:1px solid #A7F3D0',
     ineligible: 'background:#FEF2F2;color:#991B1B;border:1px solid #FECACA',
     dup:        'background:#FFFBEB;color:#92400E;border:1px solid #FDE68A',
-    checking:   'background:var(--surface3);color:var(--muted);border:1px solid var(--border)',
-    '':         'display:none'
+    checking:   'background:var(--surface3);color:var(--muted);border:1px solid var(--border)'
   };
-  badge.style.cssText = 'margin-top:6px;padding:8px 12px;border-radius:var(--radius-xs);font-size:12px;font-weight:600;display:flex;align-items:center;gap:7px;'+styles[type];
-  badge.textContent = msg;
+  badge.style.cssText = 'margin-top:6px;padding:8px 12px;border-radius:var(--radius-xs);font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;'+(styles[type]||'');
+  badge.setAttribute('aria-live','polite');
+  badge.textContent = '';
+
+  // Leading visual: spinner while checking, otherwise an icon that draws itself
+  if(type==='checking'){
+    const sp = document.createElement('span'); sp.className = 'elig-spin'; badge.appendChild(sp);
+    const sc = document.createElement('span'); sc.className = 'elig-scan'; badge.appendChild(sc);
+  } else {
+    const kind = type==='ok' ? 'ok' : type==='ineligible' ? 'bad' : 'warn';
+    const glyph = type==='ok' ? 'M7.5 12.5l3 3L16.5 9' : type==='ineligible' ? 'M8.5 8.5l7 7M15.5 8.5l-7 7' : 'M12 7.5v5.5M12 16.4v.1';
+    const wrap = document.createElement('span');
+    wrap.innerHTML = '<svg class="elig-icon '+kind+'" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="'+glyph+'"/></svg>';
+    badge.appendChild(wrap.firstChild || wrap);
+  }
+  const txt = document.createElement('span');
+  txt.textContent = String(msg).replace(/^[✓✗]\s*/, '');      // the drawn icon replaces the text symbol
+  badge.appendChild(txt);
+
+  // Restart the entrance animation for this state
+  badge.className = ''; void badge.offsetWidth;
+  badge.className = type==='ineligible' ? 'elig-in elig-shake' : type==='dup' ? 'elig-bounce' : type==='checking' ? '' : 'elig-in';
 }
 
 function submitRequest(){
@@ -1874,32 +1956,66 @@ function saveEditSize(rowIndex){
   );
 }
 
-function doIssue(rowIndex, r){
-  const btn = document.getElementById('ibtn-'+rowIndex);
-
-  // ── Step 1: Press — scale down, start fill ──
-  if(btn){
-    btn.disabled = true;
-    btn.textContent = 'Issuing…';
-    // Force reflow so transition fires from 0%
-    void btn.offsetWidth;
-    btn.classList.add('filling');
+// ── Issue button states: working → done / failed ───────────────
+function _issueBtnState(btn, state){
+  if(!btn) return;
+  btn.classList.remove('filling','issued','failed');
+  if(state === 'working'){
+    btn.disabled = true; btn.classList.add('filling');
+    btn.innerHTML = '<span class="issue-spin"></span>Issuing…';
+  } else if(state === 'done'){
+    btn.disabled = true; btn.classList.add('issued');
+    btn.innerHTML = '<svg class="issue-check-svg" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Issued';
+  } else if(state === 'failed'){
+    btn.disabled = true; btn.classList.add('failed');
+    btn.textContent = 'Failed ✕';
+    setTimeout(()=>_issueBtnState(btn, 'idle'), 1300);      // back to a usable button
+  } else {
+    btn.disabled = false; btn.textContent = 'Issue';
   }
+}
+
+// Fold a row away (fade + slide + height collapse), then call done()
+function _collapseRow(wrap, done){
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!wrap || reduce){ done(); return; }
+  const h = wrap.offsetHeight;
+  wrap.style.maxHeight = h + 'px';
+  wrap.style.transition = 'max-height .38s ease, opacity .3s ease, transform .38s ease, margin-bottom .38s ease';
+  void wrap.offsetHeight;                                   // commit the start values
+  wrap.style.maxHeight = '0px'; wrap.style.opacity = '0';
+  wrap.style.transform = 'translateX(28px)'; wrap.style.marginBottom = '0px';
+  setTimeout(done, 400);
+}
+
+function doIssue(rowIndex, r){
+  const btn  = document.getElementById('ibtn-'+rowIndex);
+  const row  = document.getElementById('prow-'+rowIndex);
+  const wrap = document.getElementById('pwrap-'+rowIndex);
+
+  // 1) Working: spinner + sweeping light on the button, soft green glow on the row
+  _issueBtnState(btn, 'working');
+  if(row) row.classList.add('issuing');
+
+  const fail = (msg)=>{
+    if(row) row.classList.remove('issuing');
+    _issueBtnState(btn, 'failed');                          // red + shake, then resets itself
+    setMsg('pendingMsg', msg, 'err');
+  };
 
   post({action:'issueFromPending',rowIndex,cardNo:r.cardNo,name:r.name,dept:r.dept,size:r.size,reason:r.reason})
     .then(res=>{
-      if(res.status==='ok'){
-        // ── Step 2: Fill complete → checkmark pop ──
-        if(btn){
-          btn.classList.remove('filling');
-          btn.classList.add('issued');
-          btn.innerHTML = '<span class="issue-check">✓</span> Issued';
-        }
-        // ── Step 3: After 900ms — update both lists instantly ──
-        setTimeout(()=>{
-          // Remove from pending
-          _pending = _pending.filter(p=>p.rowIndex!==rowIndex);
-          updateStats();
+      if(res.status !== 'ok'){ fail('Error: '+(res.message||'Unknown')); return; }
+
+      // 2) Success: tick draws itself, ring expands, row flashes green
+      if(row){ row.classList.remove('issuing'); row.classList.add('issued-flash'); }
+      _issueBtnState(btn, 'done');
+
+      // 3) After a beat: counters tick down while the row folds away, then lists update
+      setTimeout(()=>{
+        _pending = _pending.filter(p=>p.rowIndex!==rowIndex);
+        updateStats();
+        _collapseRow(wrap, ()=>{
           filterPending();
           setMsg('pendingMsg','✓ Issued to '+r.name+' (UK '+r.size+') on '+fmtDate(res.issueDate)+'.','ok');
 
@@ -1927,25 +2043,9 @@ function doIssue(rowIndex, r){
           }
           _buildEmpLookup();
           markStale('dashboard');
-        }, 900);
-      } else {
-        // Reset on error
-        if(btn){
-          btn.classList.remove('filling','issued');
-          btn.disabled = false;
-          btn.textContent = 'Issue';
-        }
-        setMsg('pendingMsg','Error: '+(res.message||'Unknown'),'err');
-      }
-    })
-    .catch(()=>{
-      if(btn){
-        btn.classList.remove('filling','issued');
-        btn.disabled = false;
-        btn.textContent = 'Issue';
-      }
-      setMsg('pendingMsg','✗ Connection error.','err');
-    });
+        });
+      }, 900);
+    }, ()=>fail('✗ Connection error.'));                    // network failure only
 }
 
 // ── RELOCATE ALLOCATION ───────────────────────────────────────
